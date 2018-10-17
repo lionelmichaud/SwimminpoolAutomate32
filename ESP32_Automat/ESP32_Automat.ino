@@ -45,7 +45,6 @@
 #include "images.h"
 #include "OLEDDisplayUi.h"
 
-
 // client NTP
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", NTP_OFFSET, NTP_PERIOD);
@@ -66,13 +65,17 @@ const int   port = 8084;
 const int   aDelay = 500; // délai entre lignes envoyées sur Serial
 //HTTPClient http;
 
+// pin GPIO
+const int SDApin     = 19;
+const int SCLpin     = 22;
+
 // OLED display
 char OLED_buffer[20];
 // Initialize the OLED display using Wire library
 // display(@, SDA, SCL)
-SSD1306Wire  display(0x3c, 4, 2);
+SSD1306Wire  display(0x3c, SDApin, SCLpin);
 // SH1106 display(0x3c, D3, D5);
-OLEDDisplayUi ui     ( &display );
+OLEDDisplayUi ui(&display);
 
 IPAddress the_IP;
 IPAddress AP_IP;
@@ -89,9 +92,6 @@ boolean restartFlag = false;     // whether to restart the module (http command
 
 boolean UnexpectedStringReceived = false; // string receieved from Arduino is not understood
 String UnexpectedString = "";
-
-boolean initAirTemp    = true;
-boolean initWaterTemp  = true;
 
 // Paramètres à envoyer à Domoticz
 float AirTemp       = 0.0;
@@ -122,12 +122,34 @@ SimpleTimer timer;
 const int fontsize = 10;
 int Ypos = 0;
 
+// functions prototypes
+boolean StartWiFiSoftAP();
+boolean ConnectToWiFi();
+void DisplayOneMoreLine(String line, OLEDDISPLAY_TEXT_ALIGNMENT textAlignment);
+void DisplayAlert(String AlertText);
+void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
+void drawPageSoftwareInfo(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
+void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
+void drawPageWiFi_ST_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
+void drawDeviceInfoElec(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
+void drawDeviceInfoGaz(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
+
+// This array keeps function pointers to all frames
+// frames are the single views that slide in
+FrameCallback frames[] = { drawPageSoftwareInfo, drawPageWiFi_AP_Info, drawPageWiFi_ST_Info,
+                           drawDeviceInfoElec, drawDeviceInfoGaz
+                         };
+
+// how many frames are there?
+int frameCount = 5;
+
+// Overlays are statically drawn on top of a frame eg. a clock
+OverlayCallback overlays[] = { msOverlay };
+int overlaysCount = 1;
+
 void Print_NTP_Date_Time() {
   Serial.println(">Time = " + TimeNTP);
 }
-boolean StartWiFiSoftAP();
-boolean ConnectToWiFi();
-
 //--------------------------------------------------------------------
 // SETUP
 //--------------------------------------------------------------------
@@ -138,9 +160,58 @@ void setup() {
   SoftwareString.reserve(50);
   inputString.reserve(200);
 
+  //-------------------------------
   // initialize serial:
+  //-------------------------------
   Serial.begin(USBSERIAL_BITRATE);
   delay(10);
+
+  //-------------------------------
+  // INITIALIZE 1WIRE BUS and OLED
+  //-------------------------------
+  Serial.println(">OLED Init...");
+
+  // The ESP is capable of rendering 60fps in 80Mhz mode
+  // but that won't give you much time for anything else
+  // run it in 160Mhz mode or just set it to 30 fps
+  ui.setTargetFPS(20);
+
+  // Customize the active and inactive symbol
+  ui.setActiveSymbol(activeSymbol);
+  ui.setInactiveSymbol(inactiveSymbol);
+
+  // You can change this to
+  // TOP, LEFT, BOTTOM, RIGHT
+  ui.setIndicatorPosition(BOTTOM);
+
+  // Defines where the first frame is located in the bar.
+  ui.setIndicatorDirection(LEFT_RIGHT);
+
+  // You can change the transition that is used
+  // SLIDE_LEFT, SLIDE_RIGHT, SLIDE_UP, SLIDE_DOWN
+  ui.setFrameAnimation(SLIDE_LEFT);
+
+  // Add frames
+  ui.setFrames(frames, frameCount);
+
+  // Add overlays
+  ui.setOverlays(overlays, overlaysCount);
+
+  // Initialising the UI will init the display too.
+  ui.init();
+
+  // Initialising the UI will init the display too.
+  display.init();
+  //display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_10);
+
+  // clear the display
+  display.clear();
+
+  DisplayOneMoreLine("ESP32 booting...", TEXT_ALIGN_CENTER);
+  DisplayOneMoreLine("VERSION : " + String(VERSION), TEXT_ALIGN_CENTER);
+  DisplayOneMoreLine("compiled " + String(__DATE__), TEXT_ALIGN_CENTER);
+
 
 #if defined VERBOSE
   Serial.println("");
@@ -197,57 +268,69 @@ void setup() {
 void loop() {
   if (restartFlag) ESP.restart();
 
-  //  // execute the timers
+  // execute the timers
   timer.run();
 
-  //-------------------------------------------------------
-  // RECUPERER LES CARACTERES ARRIVANT SUR LA LIAISON SERIE
-  //-------------------------------------------------------
-  while (Serial.available()) {
-    // get the new byte:
-    char inChar = (char)Serial.read();
-    // add it to the inputString:
-    inputString += inChar;
-    // Serial.print(inChar);
-    // if the incoming character is a newline, set a flag
-    // so the main loop can do something about it:
-    if (inChar == '\n') {
-      stringComplete = true;
+  int remainingTimeBudget = ui.update();
+
+  if (remainingTimeBudget > 0) {
+    // You can do some work here
+    // Don't do stuff if you are below your
+    // time budget.
+
+    //-------------------------------------------------------
+    // RECUPERER LES CARACTERES ARRIVANT SUR LA LIAISON SERIE
+    //-------------------------------------------------------
+    while (Serial.available()) {
+      // get the new byte:
+      char inChar = (char)Serial.read();
+      // add it to the inputString:
+      inputString += inChar;
+      // Serial.print(inChar);
+      // if the incoming character is a newline, set a flag
+      // so the main loop can do something about it:
+      if (inChar == '\n') {
+        stringComplete = true;
+      }
     }
-  }
 
-  if (WiFi.status() != WL_CONNECTED) {
-    //---------------------------------------------------
-    // SI LA CONNECTION EST PERDUE, TENTER DE LA RETABLIR
-    //---------------------------------------------------
-    Serial.println(F(">WiFi not connected !"));
-    //WiFiConnect();
+    if (WiFi.status() != WL_CONNECTED) {
+      //----------------------
+      // ETEINDRE LA LED ROUGE
+      //----------------------
+      // digitalWrite(redLEDpin, LOW);
 
-  } else {
-    //--------------------------------------------------
-    // UPDATE DOMOTICZ the string when a newline arrives:
-    //--------------------------------------------------
+      //---------------------------------------------------
+      // SI LA CONNECTION EST PERDUE, TENTER DE LA RETABLIR
+      //---------------------------------------------------
+      Serial.println(F(">WiFi not connected !"));
+      ConnectToWiFi();
+
+    } else {
+      //--------------------------------------------------
+      // UPDATE DOMOTICZ the string when a newline arrives:
+      //--------------------------------------------------
+      if (stringComplete) {
+        //parseString(inputString);
+      }
+    }
+
     if (stringComplete) {
-      //parseString(inputString);
+      // clear the string:
+      inputString = "";
+      stringComplete = false;
     }
+
+    //--------------------------
+    // EXECUTER LE SERVEUR WEB
+    //--------------------------
+    //  server.handleClient();
+
+    //-------------------------
+    // RECUPERER LE TEMPS NTP
+    //-------------------------
+    timeClient.update();
+    TimeNTP = timeClient.getFormattedTime();
+    //  DateNTP = timeClient.getFormattedDate();
   }
-
-  if (stringComplete) {
-    // clear the string:
-    inputString = "";
-    stringComplete = false;
-  }
-
-  //  //--------------------------
-  //  // EXECUTER LE SERVEUR WEB
-  //  //--------------------------
-  //  server.handleClient();
-  //
-
-  //-------------------------
-  // RECUPERER LE TEMPS NTP
-  //-------------------------
-  timeClient.update();
-  TimeNTP = timeClient.getFormattedTime();
-  //  DateNTP = timeClient.getFormattedDate();
 }
