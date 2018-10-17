@@ -145,16 +145,19 @@ boolean ConnectToWiFi() {
       // FIND BEST RSSI
       //----------------------
       theRSSI = WiFi.RSSI(i);
-      if ( (theRSSI > bestRSSI) and
-           //((WiFi.SSID(i) == MonBWiFi_ssid) or (WiFi.SSID(i) == Garage_ssid)) ) {
-           (
-             (WiFi.SSID(i) == MonWiFi_ssid) or
-             (WiFi.SSID(i) == MonBWiFi_ssid) or
-             (WiFi.SSID(i) == Pool_ssid) or
-             (WiFi.SSID(i) == Garage_ssid)) ) {
-        bestRSSI = theRSSI;
-        selectedWiFi = i;
+
+      // if (WiFi.SSID(i) == MonBWiFi_ssid) or (WiFi.SSID(i) == Garage_ssid)) {
+      if (
+        (WiFi.SSID(i) == MonWiFi_ssid) or
+        (WiFi.SSID(i) == MonBWiFi_ssid) or
+        (WiFi.SSID(i) == Pool_ssid) or
+        (WiFi.SSID(i) == Garage_ssid) ) {
         DisplayOneMoreLine("." + String(i + 1) + ": " + String(WiFi.SSID(i)) + " (RSSI=" + String(theRSSI) + ")", TEXT_ALIGN_LEFT);
+
+        if (theRSSI > bestRSSI) {
+          bestRSSI = theRSSI;
+          selectedWiFi = i;
+        }
       }
 #if defined VERBOSE
       //--------------------------------------------
@@ -193,7 +196,7 @@ boolean ConnectToWiFi() {
 #if defined VERBOSE
       Serial.print(".");
 #endif
-      display.drawProgressBar(0, 55, 120, 8, int((connectionAttemps * 100 ) / MaxAttempts) );
+      display.drawProgressBar(4, 54, 120, 6, int((connectionAttemps * 100 ) / MaxAttempts) );
       // display buffer
       display.display();
 

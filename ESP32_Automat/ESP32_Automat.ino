@@ -24,9 +24,8 @@
 #define idx_automate  50
 #define idx_posVolet  51
 
-#include <Arduino.h>
+#include "NTPClient.h"
 #include <WiFi.h>
-#include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <ESPmDNS.h>
 #include <SimpleTimer.h>
@@ -70,7 +69,6 @@ const int SDApin     = 19;
 const int SCLpin     = 22;
 
 // OLED display
-char OLED_buffer[20];
 // Initialize the OLED display using Wire library
 // display(@, SDA, SCL)
 SSD1306Wire  display(0x3c, SDApin, SCLpin);
@@ -174,7 +172,7 @@ void setup() {
   // The ESP is capable of rendering 60fps in 80Mhz mode
   // but that won't give you much time for anything else
   // run it in 160Mhz mode or just set it to 30 fps
-  ui.setTargetFPS(20);
+  ui.setTargetFPS(30);
 
   // Customize the active and inactive symbol
   ui.setActiveSymbol(activeSymbol);
@@ -331,6 +329,6 @@ void loop() {
     //-------------------------
     timeClient.update();
     TimeNTP = timeClient.getFormattedTime();
-    //  DateNTP = timeClient.getFormattedDate();
+    DateNTP = timeClient.getFormattedDate();
   }
 }
