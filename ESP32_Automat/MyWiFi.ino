@@ -44,7 +44,7 @@ boolean StartWiFiSoftAP() {
 //---------------------------------------------------
 // . DEMARRAGE DU SERVEUR WEB DE TELECHARGEMENT OTA
 //---------------------------------------------------
-boolean WiFi_WEB_OTA() {
+boolean Start_WiFi_WEB_OTA() {
   //  httpUpdater.setup(&server);
   //  DisplayOneMoreLine("HTTP Update Server ready", TEXT_ALIGN_LEFT);
   //#if defined VERBOSE
@@ -56,40 +56,66 @@ boolean WiFi_WEB_OTA() {
 //---------------------------------------------------
 // . DEMARRAGE DU SERVEUR IDE DE TELECHARGEMENT OTA
 //---------------------------------------------------
-boolean WiFi_IDE_OTA() {
+boolean Start_WiFi_IDE_OTA() {
   // Port defaults to 8266
   // ArduinoOTA.setPort(8266);
 
-  // Hostname defaults to esp8266-[ChipID]
-  // ArduinoOTA.setHostname("myesp8266");
+  // Hostname defaults to esp3232-[MAC]
+  // ArduinoOTA.setHostname("myesp32");
 
   // No authentication by default
-  // ArduinoOTA.setPassword((const char *)"123");
+  // ArduinoOTA.setPassword("admin");
 
-  //  ArduinoOTA.onStart([]() {
-  //    Serial.println("Start");
-  //  });
-  //  ArduinoOTA.onEnd([]() {
-  //    Serial.println("\nEnd");
-  //  });
-  //  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-  //    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  //  });
-  //  ArduinoOTA.onError([](ota_error_t error) {
-  //    Serial.printf("Error[%u]: ", error);
-  //    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-  //    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-  //    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-  //    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-  //    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  //
-  //    ESP.restart();
-  //  });
-  //  ArduinoOTA.begin();
-  //#if defined VERBOSE
-  //  Serial.println(">IDE Update server initialized");
-  //  delay(aDelay);
-  //#endif
+  // Password can be set with it's md5 value as well
+  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
+  // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
+
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+    display.clear();
+    display.setFont(ArialMT_Plain_10);
+    display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
+    display.drawString(display.getWidth()/2, display.getHeight()/2 - 10, "Start updating " + type);
+    display.display();
+  });
+  
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+    display.clear();
+    display.setFont(ArialMT_Plain_10);
+    display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
+    display.drawString(display.getWidth()/2, display.getHeight()/2, "Restart");
+    display.display();
+  });
+  
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    display.drawProgressBar(4, 32, 120, 8, progress / (total / 100) );
+    display.display();
+  });
+  
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    ESP.restart();
+  });
+  
+  ArduinoOTA.begin();
+#if defined VERBOSE
+  Serial.println(">IDE Update server initialized");
+  delay(aDelay);
+#endif
 }
 
 //-----------------------------------------------
@@ -270,13 +296,13 @@ boolean ConnectToWiFi() {
     //-----------------------------
     // START THE OTA UPDATE SERVICE
     //-----------------------------
-    WiFi_WEB_OTA();
-    WiFi_IDE_OTA(); // exécuter seulement si on veut pouvoir télécharger le logiciel
+    Start_WiFi_WEB_OTA();
+    //Start_WiFi_IDE_OTA(); // exécuter seulement si on veut pouvoir télécharger le logiciel
 
     //--------------------
     // START MDNS SERVER
     //--------------------
-    //StartWEBserver();
+    StartWEBserver();
 
     return true;
   }

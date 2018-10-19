@@ -26,8 +26,12 @@
 
 #include "NTPClient.h"
 #include <WiFi.h>
+#include <WebServer.h>
 #include <WiFiUdp.h>
+#include <HTTPClient.h>
 #include <ESPmDNS.h>
+#include <ArduinoOTA.h>
+#include <Update.h>
 #include <SimpleTimer.h>
 #include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
@@ -44,25 +48,29 @@
 #include "images.h"
 #include "OLEDDisplayUi.h"
 
-// client NTP
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", NTP_OFFSET, NTP_PERIOD);
-
 // paramètres Wi-Fi
-const char* Local_Name    = "esp01_pool_13";
+const char* Local_Name    = "esp32_pool_13";
 const char* Pool_ssid     = "Pool";
 const char* Garage_ssid   = "Garage";
 const char* MonWiFi_ssid  = "Mon Wi-Fi";
 const char* MonBWiFi_ssid = "Mon BWi-Fi";
 const char* password = "louannetvanessasontmessourisadorees"; // pour tous les réseaux Wi-Fi
 
-const char* Automat_ssid  = "esp01_pool_13";
+const char* Automat_ssid  = "esp32_pool_13";
 const char* Automat_pwd = "Levsmsa2";
 
 const char* host = "192.168.1.23"; // "192.168.1.23";
 const int   port = 8084;
 const int   aDelay = 500; // délai entre lignes envoyées sur Serial
-//HTTPClient http;
+
+// client NTP
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", NTP_OFFSET, NTP_PERIOD);
+
+// serveur WEB
+WebServer server(80);
+
+HTTPClient http;
 
 // pin GPIO
 const int SDApin     = 19;
@@ -131,6 +139,7 @@ void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int
 void drawPageWiFi_ST_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
 void drawDeviceInfoElec(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
 void drawDeviceInfoGaz(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
+void StartWEBserver ();
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
@@ -322,7 +331,12 @@ void loop() {
     //--------------------------
     // EXECUTER LE SERVEUR WEB
     //--------------------------
-    //  server.handleClient();
+    server.handleClient();
+
+    //---------------------------------------------
+    // SURVEILLER UNE DEMANDE DE TELECHARGEMENT IDE
+    //---------------------------------------------
+    ArduinoOTA.handle();
 
     //-------------------------
     // RECUPERER LE TEMPS NTP
