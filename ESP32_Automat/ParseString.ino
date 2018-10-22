@@ -16,8 +16,8 @@ void parseString(String receivedString) {
 #endif
 
     if ((localFloat > 0.0) && (localFloat < 60.0)) {
-      AirTemp = localFloat;
-      sendSvalueDomoticz(String(AirTemp), String(idx_airTemp));
+      PoolState.AirTemp = localFloat;
+      sendSvalueDomoticz(String(PoolState.AirTemp), String(idx_airTemp));
     }
   }
 
@@ -32,8 +32,8 @@ void parseString(String receivedString) {
 #endif
 
     if ((localFloat > 0.0) && (localFloat < 40.0)) {
-      WaterTemp = localFloat;
-      sendSvalueDomoticz(String(WaterTemp), String(idx_waterTemp));
+      PoolState.WaterTemp = localFloat;
+      sendSvalueDomoticz(String(PoolState.WaterTemp), String(idx_waterTemp));
     }
   }
 
@@ -45,7 +45,7 @@ void parseString(String receivedString) {
 #if defined ECHO
     Serial.print(">TempMaxInt = "); Serial.println(localFloat);
 #endif
-    if ((localFloat > 0.0) && (localFloat < 150.0)) MaxIntTemp = localFloat;
+    if ((localFloat > 0.0) && (localFloat < 150.0)) PoolState.MaxIntTemp = localFloat;
   }
 
   //-------------------------------------
@@ -56,7 +56,7 @@ void parseString(String receivedString) {
 #if defined ECHO
     Serial.print(">TempInt  = "); Serial.println(localFloat);
 #endif
-    if ((localFloat > 0.0) && (localFloat < 150.0)) IntTemp = localFloat;
+    if ((localFloat > 0.0) && (localFloat < 150.0)) PoolState.IntTemp = localFloat;
   }
 
   //--------------------------------------
@@ -70,14 +70,14 @@ void parseString(String receivedString) {
     Serial.print(">Automate = "); Serial.println(localString);
 #endif
     if (localString.startsWith("On")) {
-      AutomateString = "On";
-      sendSwitchCmdDomoticz(AutomateString, String(idx_automate));
+      PoolState.AutomateString = "On";
+      sendSwitchCmdDomoticz(PoolState.AutomateString, String(idx_automate));
 
     } else if (localString.startsWith("Off")) {
-      AutomateString = "Off";
-      sendSwitchCmdDomoticz(AutomateString, String(idx_automate));
+      PoolState.AutomateString = "Off";
+      sendSwitchCmdDomoticz(PoolState.AutomateString, String(idx_automate));
 
-    } else AutomateString = "";
+    } else PoolState.AutomateString = "";
   }
 
   //---------------------------
@@ -91,23 +91,23 @@ void parseString(String receivedString) {
     Serial.print(">Volet = "); Serial.println(localString);
 #endif
     if (localString.startsWith("Ouverture")) {
-      VoletString = "Ouverture";
+      PoolState.VoletString = "Ouverture";
       sendSwitchCmdDomoticz("Off", String(idx_posVolet));
 
     } else if (localString.startsWith("Fermeture")) {
-      VoletString = "Fermeture";
+      PoolState.VoletString = "Fermeture";
       sendSwitchCmdDomoticz("On", String(idx_posVolet));
 
-    } else VoletString = "";
+    } else PoolState.VoletString = "";
   }
 
   //--------------------------------
   // SEUILS D'OUVERTURE/FERMETURE
   //--------------------------------
   else if (receivedString.startsWith("Seuil: ")) {
-    Seuil = receivedString.substring(7).toFloat();
+    AutomatParam.Seuil = receivedString.substring(7).toFloat();
 #if defined ECHO
-    Serial.print(">Seuil = "); Serial.println(Seuil);
+    Serial.print(">Seuil = "); Serial.println(AutomatParam.Seuil);
 #endif
   }
 
@@ -115,9 +115,9 @@ void parseString(String receivedString) {
   // HYSTERESIS DE L'OUVERTURE/FERMETURE
   //------------------------------------
   else if (receivedString.startsWith("Hyste: ")) {
-    Hysteresis = receivedString.substring(7).toFloat();
+    AutomatParam.Hysteresis = receivedString.substring(7).toFloat();
 #if defined ECHO
-    Serial.print(">Hyste = "); Serial.println(Hysteresis);
+    Serial.print(">Hyste = "); Serial.println(AutomatParam.Hysteresis);
 #endif
   }
 
@@ -125,9 +125,9 @@ void parseString(String receivedString) {
   // OFFSET DE MESURE DE TEMPERATURE EAU
   //------------------------------------
   else if (receivedString.startsWith("d Eau: ")) {
-    OffsetEau = receivedString.substring(7).toFloat();
+    AutomatParam.OffsetEau = receivedString.substring(7).toFloat();
 #if defined ECHO
-    Serial.print(">Offset Eau = "); Serial.println(OffsetEau);
+    Serial.print(">Offset Eau = "); Serial.println(AutomatParam.OffsetEau);
 #endif
   }
 
@@ -135,9 +135,9 @@ void parseString(String receivedString) {
   // OFFSET DE MESURE DE TEMPERATURE AIR
   //------------------------------------
   else if (receivedString.startsWith("d Air: ")) {
-    OffsetAir = receivedString.substring(7).toFloat();
+    AutomatParam.OffsetAir = receivedString.substring(7).toFloat();
 #if defined ECHO
-    Serial.print(">Offset Air = "); Serial.println(OffsetAir);
+    Serial.print(">Offset Air = "); Serial.println(AutomatParam.OffsetAir);
 #endif
   }
 }

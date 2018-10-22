@@ -131,14 +131,14 @@ String getPageDeviceInfo() {
   page +=       "<em>Etat de la piscine</em>";
   page +=     "</h3>";
   page +=     "<a class='nav-link btn btn-info' href='#'>Heure <span class='badge badge-light'>" + TimeNTP + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(AirTemp) + " deg" + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(WaterTemp) + " deg" + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp int <span class='badge badge-light'>" + String(IntTemp) + " deg" + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp max int <span class='badge badge-light'>" + String(MaxIntTemp) + " deg" + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + AutomateString + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Position du Volet <span class='badge badge-light'>" + VoletString + "</span></a>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(PoolState.AirTemp) + " deg" + "</span></a>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(PoolState.WaterTemp) + " deg" + "</span></a><br>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp int <span class='badge badge-light'>" + String(PoolState.IntTemp) + " deg" + "</span></a>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp max int <span class='badge badge-light'>" + String(PoolState.MaxIntTemp) + " deg" + "</span></a><br>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + PoolState.AutomateString + "</span></a>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Position du Volet <span class='badge badge-light'>" + PoolState.VoletString + "</span></a>";
   page +=     "<ul>";
-  page +=       "Seuils : Temp Air = Temp Eau + " + String(Seuil) + " (ouvre) / " + String(Seuil - Hysteresis) + " (ferme)";
+  page +=       "Seuils : Temp Air = Temp Eau + " + String(AutomatParam.Seuil) + " (ouvre) / " + String(AutomatParam.Seuil - AutomatParam.Hysteresis) + " (ferme)";
   page +=     "</ul>";
   page +=   "</div>";
 
@@ -164,7 +164,7 @@ String getPageCommands() {
   page +=       "<a href=/info       target=blank class='btn btn-success' >Obtenir ces informations au format text</a><br>";
 
   page +=       "<h5 class='text-left text-primary'>";
-  page +=         "Offset Temperature Air : " + String(OffsetAir);
+  page +=         "Offset Temperature Air : " + String(AutomatParam.OffsetAir);
   page +=       "</h5>";
   //  page +=       "<div class='row'>";
   //  page +=       "  <div class='col-md-6'>";
@@ -175,7 +175,7 @@ String getPageCommands() {
   //  page +=       "  </div>";
   //  page +=       "</div>";
   page +=       "<h5 class='text-left text-primary'>";
-  page +=         "Offset Temperature Eau : " + String(OffsetEau);
+  page +=         "Offset Temperature Eau : " + String(AutomatParam.OffsetEau);
   page +=       "</h5>";
   //  page +=       "<div class='row'>";
   //  page +=       "  <div class='col-md-6'>";
@@ -235,8 +235,7 @@ void handleTextInfo() {
   FlashMode_t ideMode = ESP.getFlashChipMode();
   //  uint32_t chipId = ESP.getFlashChipId();
 
-  String message = "Logiciel Arduino: " + SoftwareString;
-  message += "\nLogiciel ESP: " + String(SOFTWARE);
+  String message = "Logiciel ESP: " + String(SOFTWARE);
   message += " - Version: " + String(VERSION);
   //  message += "\nESP Flash size:  " + String(ESP.getFlashChipRealSize() / 1024) + " kByte";
   //  message += "\nESP Free sketch space: " + String(ESP.getFreeSketchSpace() / 1024) + " kByte";
@@ -254,13 +253,13 @@ void handleTextInfo() {
   message += "\n   IP:   " + the_IP_String;
   message += "\n   MAC:  " + the_MAC_String;
   message += "\n\nStatus:";
-  message += "\n   Temperature air  = " + String(AirTemp) + " deg";
-  message += "\n   Temperature eau  = " + String(WaterTemp) + " deg";
-  message += "\n   Temperature interne  = " + String(IntTemp) + " deg";
-  message += "\n   Temperature interne maximale atteinte = " + String(MaxIntTemp) + " deg";
-  message += "\n   Mode automatique  = " + AutomateString;
-  message += "\n   Position du Volet = " + VoletString;
-  message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil) + " (ouvre) / " + String(Seuil - Hysteresis) + " (ferme)";
+  message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg";
+  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg";
+  message += "\n   Temperature interne  = " + String(PoolState.IntTemp) + " deg";
+  message += "\n   Temperature interne maximale atteinte = " + String(PoolState.MaxIntTemp) + " deg";
+  message += "\n   Mode automatique  = " + PoolState.AutomateString;
+  message += "\n   Position du Volet = " + PoolState.VoletString;
+  message += "\n   Seuils : Temp Air = Temp Eau + " + String(AutomatParam.Seuil) + " (ouvre) / " + String(AutomatParam.Seuil - AutomatParam.Hysteresis) + " (ferme)";
   message += "\n\nCommands: ";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";
   message += "\n   http://" + String(Local_Name) + ".local/binfile    : mettre a jour le logiciel WEB OTA";

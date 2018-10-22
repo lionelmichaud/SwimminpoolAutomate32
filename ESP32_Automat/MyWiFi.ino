@@ -10,13 +10,15 @@ boolean StartWiFiSoftAP() {
   boolean result = WiFi.softAP(Automat_ssid, Automat_pwd); //WiFi.softAP(Automat_ssid, Automat_pwd);
   delay(500);
 
+  // clear the display
+  display.clear();
+  Ypos = 0;
+
   if (result == true) {
 #if defined VERBOSE
     Serial.println(">Wi-Fi access point started");
 #endif
-    display.drawString(64, Ypos, "Wi-Fi access point started");
-    Ypos += fontsize;
-    display.display();
+    DisplayOneMoreLine("Wi-Fi access point started", TEXT_ALIGN_LEFT);
   }
   else {
 #if defined VERBOSE
@@ -34,9 +36,7 @@ boolean StartWiFiSoftAP() {
   Serial.println(AP_IP);
 #endif
 
-  display.drawString(64, Ypos, "AP IP @ " + the_AP_IP_String);
-  Ypos += fontsize;
-  display.display();
+  DisplayOneMoreLine("AP IP @ " + the_AP_IP_String, TEXT_ALIGN_LEFT);
 
   return true;
 }
@@ -82,25 +82,25 @@ boolean Start_WiFi_IDE_OTA() {
     display.clear();
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
-    display.drawString(display.getWidth()/2, display.getHeight()/2 - 10, "Start updating " + type);
+    display.drawString(display.getWidth() / 2, display.getHeight() / 2 - 10, "Start updating " + type);
     display.display();
   });
-  
+
   ArduinoOTA.onEnd([]() {
     Serial.println("\nEnd");
     display.clear();
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
-    display.drawString(display.getWidth()/2, display.getHeight()/2, "Restart");
+    display.drawString(display.getWidth() / 2, display.getHeight() / 2, "Restart");
     display.display();
   });
-  
+
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     display.drawProgressBar(4, 32, 120, 8, progress / (total / 100) );
     display.display();
   });
-  
+
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
@@ -110,7 +110,7 @@ boolean Start_WiFi_IDE_OTA() {
     else if (error == OTA_END_ERROR) Serial.println("End Failed");
     ESP.restart();
   });
-  
+
   ArduinoOTA.begin();
 #if defined VERBOSE
   Serial.println(">IDE Update server initialized");
