@@ -16,13 +16,13 @@ boolean StartWiFiSoftAP() {
 
   if (result == true) {
 #if defined VERBOSE
-    Serial.println(">Wi-Fi access point started");
+    Serial.println("Wi-Fi access point started");
 #endif
     DisplayOneMoreLine("Wi-Fi access point started", TEXT_ALIGN_LEFT);
   }
   else {
 #if defined VERBOSE
-    Serial.println(">Wi-Fi access point failed!");
+    Serial.println("Wi-Fi access point failed!");
 #endif
     DisplayAlert("Wi-Fi access point failed !");
     display.setFont(ArialMT_Plain_10);
@@ -32,7 +32,7 @@ boolean StartWiFiSoftAP() {
   AP_IP = WiFi.softAPIP();
   the_AP_IP_String = String(AP_IP[0]) + "." + String(AP_IP[1]) + "." + String(AP_IP[2]) + "." + String(AP_IP[3]);
 #if defined VERBOSE
-  Serial.print(">  AP IP address: ");
+  Serial.print("  AP IP address: ");
   Serial.println(AP_IP);
 #endif
 
@@ -127,14 +127,14 @@ boolean ConnectToWiFi() {
   // SCAN WI-FI
   //--------------------
 #if defined VERBOSE
-  Serial.println(">Wi-Fi scan start");
+  Serial.println("Wi-Fi scan start");
   delay(aDelay);
 #endif
 
   // WiFi.scanNetworks will return the number of networks found
   int n = WiFi.scanNetworks();
 #if defined VERBOSE
-  Serial.println(">Wi-Fi scan done");
+  Serial.println("Wi-Fi scan done");
   delay(aDelay);
 #endif
   // clear the display
@@ -148,7 +148,7 @@ boolean ConnectToWiFi() {
   //--------------------------------------------------
   if (n == 0) {
 #if defined VERBOSE
-    Serial.println("> no Wi-Fi network found !!");
+    Serial.println(" no Wi-Fi network found !!");
     delay(aDelay);
 #endif
     DisplayAlert("No Wi-Fi network found !!");
@@ -158,7 +158,7 @@ boolean ConnectToWiFi() {
   else
   {
 #if defined VERBOSE
-    Serial.print("> "); Serial.print(n);
+    Serial.print(" "); Serial.print(n);
     Serial.println(" Wi-Fi networks found:");
     delay(aDelay);
 #endif
@@ -189,7 +189,7 @@ boolean ConnectToWiFi() {
       //--------------------------------------------
       // Print SSID and RSSI for each network found
       //--------------------------------------------
-      Serial.print(">   "); Serial.print(i + 1);
+      Serial.print("   "); Serial.print(i + 1);
       Serial.print(": ");
       Serial.print(WiFi.SSID(i));
       Serial.print(" (RSSI=");
@@ -205,7 +205,7 @@ boolean ConnectToWiFi() {
 
 #if defined VERBOSE
     Serial.println("");
-    Serial.print(">Connecting to Wifi : ");
+    Serial.print("Connecting to Wifi : ");
     Serial.println(selected_ssid);
     delay(aDelay);
 #endif
@@ -231,7 +231,7 @@ boolean ConnectToWiFi() {
       // redémarrer si pas de connection au bout de 30 secondes
       if (connectionAttemps == MaxAttempts) {
 #if defined VERBOSE
-        Serial.println(">Rebooting ESP...");
+        Serial.println("Rebooting ESP...");
 #endif
         DisplayAlert("No connection. Rebooting ESP...");
         ESP.restart();
@@ -244,16 +244,16 @@ boolean ConnectToWiFi() {
 
 #if defined VERBOSE
     Serial.println("");
-    Serial.println(">WiFi connected");
+    Serial.println("WiFi connected");
     delay(aDelay);
     the_IP = WiFi.localIP();
     the_IP_String = String(the_IP[0]) + "." + String(the_IP[1]) + "." + String(the_IP[2]) + "." + String(the_IP[3]);
-    Serial.print(">  IP address: ");
+    Serial.print("  IP address: ");
     Serial.println(the_IP);
     delay(aDelay);
     WiFi.macAddress(mac);
     the_MAC_String = String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX);
-    Serial.print(">  MAC address: ");
+    Serial.print("  MAC address: ");
     Serial.println(the_MAC_String);
     delay(aDelay);
 #endif
@@ -281,12 +281,12 @@ boolean ConnectToWiFi() {
       DisplayAlert("Error setting up MDNS responder !");
       display.setFont(ArialMT_Plain_10);
 #if defined VERBOSE
-      Serial.println("> Error setting up MDNS responder!");
+      Serial.println(" Error setting up MDNS responder!");
 #endif
     } else {
       DisplayOneMoreLine("mDNS responder started", TEXT_ALIGN_LEFT);
 #if defined VERBOSE
-      Serial.println(">mDNS responder started");
+      Serial.println("mDNS responder started");
 #endif
     }
     // Add service to MDNS-SD

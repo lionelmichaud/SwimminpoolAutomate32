@@ -72,10 +72,10 @@ void InitTemperatureSensors() {
 
   // Get the initial temperatures
   DallasSensors.requestTemperatures(); // Send the command to get temperature readings
-  PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + GetAirTempOffset();
+  PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
   Serial.print("Air Temperature is : "); Serial.println(PoolState.AirTemp);
   DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
-  PoolState.WaterTemp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + GetWaterTempOffset();
+  PoolState.WaterTemp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
   Serial.print("Eau Temperature is : "); Serial.println(PoolState.WaterTemp);
   DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
 
@@ -157,7 +157,7 @@ void AcquireTemperatures()
 {
   // read the value from the sensor: Air Temperature
   //AirTemp = TemperatureFrom3950NTC (pAirR) + TEMPOFFSETAIR;
-  Temp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + GetAirTempOffset();
+  Temp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
   if (abs(Temp - PoolState.AirTemp) < 10)
     PoolState.AirTemp = Temp;
   else {
@@ -173,7 +173,7 @@ void AcquireTemperatures()
 
   // read the value from the sensor: Water Temperature
   //WaterTemp = TemperatureFrom3950NTC (pWaterR) + TEMPOFFSETWATER;
-  Temp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + GetWaterTempOffset();
+  Temp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
   if (abs(Temp - PoolState.WaterTemp) < 10)
     PoolState.WaterTemp = Temp;
   else {

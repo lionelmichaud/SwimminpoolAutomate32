@@ -133,12 +133,10 @@ String getPageDeviceInfo() {
   page +=     "<a class='nav-link btn btn-info' href='#'>Heure <span class='badge badge-light'>" + TimeNTP + "</span></a><br>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(PoolState.AirTemp) + " deg" + "</span></a>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(PoolState.WaterTemp) + " deg" + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp int <span class='badge badge-light'>" + String(PoolState.IntTemp) + " deg" + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp max int <span class='badge badge-light'>" + String(PoolState.MaxIntTemp) + " deg" + "</span></a><br>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + PoolState.AutomateString + "</span></a>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Position du Volet <span class='badge badge-light'>" + PoolState.VoletString + "</span></a>";
   page +=     "<ul>";
-  page +=       "Seuils : Temp Air = Temp Eau + " + String(AutomatParam.Seuil) + " (ouvre) / " + String(AutomatParam.Seuil - AutomatParam.Hysteresis) + " (ferme)";
+  page +=       "Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   page +=     "</ul>";
   page +=   "</div>";
 
@@ -158,13 +156,11 @@ String getPageCommands() {
   page +=       "<a href=/update_IDE target=blank class='btn btn-danger'  >Mettre a jour le logiciel IDE OTA</a><br>";
   page +=       "<a href=/binfile    target=blank class='btn btn-danger'  >Mettre a jour le logiciel WEB OTA</a><br>";
   page +=       "<a href=/restart_e  target=blank class='btn btn-danger'  >Red&eacute;marrer ESP</a><br>";
-  page +=       "<a href=/restart_a  target=blank class='btn btn-danger'  >Red&eacute;marrer Arduino</a><br>";
-  page +=       "<a href=/reset_tint target=blank class='btn btn-warning' >Reset temp max int sur Arduino</a><br>";
   page +=       "<a href=/reset_offs target=blank class='btn btn-warning' >Reset temp offsets sur Arduino</a><br>";
   page +=       "<a href=/info       target=blank class='btn btn-success' >Obtenir ces informations au format text</a><br>";
 
   page +=       "<h5 class='text-left text-primary'>";
-  page +=         "Offset Temperature Air : " + String(AutomatParam.OffsetAir);
+  page +=         "Offset Temperature Air : " + String(AirTempOffset());
   page +=       "</h5>";
   //  page +=       "<div class='row'>";
   //  page +=       "  <div class='col-md-6'>";
@@ -175,7 +171,7 @@ String getPageCommands() {
   //  page +=       "  </div>";
   //  page +=       "</div>";
   page +=       "<h5 class='text-left text-primary'>";
-  page +=         "Offset Temperature Eau : " + String(AutomatParam.OffsetEau);
+  page +=         "Offset Temperature Eau : " + String(WaterTempOffset());
   page +=       "</h5>";
   //  page +=       "<div class='row'>";
   //  page +=       "  <div class='col-md-6'>";
@@ -255,18 +251,14 @@ void handleTextInfo() {
   message += "\n\nStatus:";
   message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg";
   message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg";
-  message += "\n   Temperature interne  = " + String(PoolState.IntTemp) + " deg";
-  message += "\n   Temperature interne maximale atteinte = " + String(PoolState.MaxIntTemp) + " deg";
   message += "\n   Mode automatique  = " + PoolState.AutomateString;
   message += "\n   Position du Volet = " + PoolState.VoletString;
-  message += "\n   Seuils : Temp Air = Temp Eau + " + String(AutomatParam.Seuil) + " (ouvre) / " + String(AutomatParam.Seuil - AutomatParam.Hysteresis) + " (ferme)";
+  message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   message += "\n\nCommands: ";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";
   message += "\n   http://" + String(Local_Name) + ".local/binfile    : mettre a jour le logiciel WEB OTA";
   message += "\n   http://" + String(Local_Name) + ".local/restart_e  : redemarrer ESP";
-  message += "\n   http://" + String(Local_Name) + ".local/restart_a  : redemarrer Arduino";
-  message += "\n   http://" + String(Local_Name) + ".local/reset_tint : reset temp max int sur Arduino";
-  message += "\n   http://" + String(Local_Name) + ".local/reset_offs : reset temp offsets sur Arduino";
+  message += "\n   http://" + String(Local_Name) + ".local/reset_offs : reset temp offsets";
   message += "\n   http://" + String(Local_Name) + ".local/eau_plus   : offeset eau +0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/eau_moins  : offeset eau -0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/air_plus   : offeset air +0.25 degre";
@@ -435,7 +427,7 @@ void StartWEBserver () {
   // Start TCP (HTTP) server
   server.begin();
 #if defined VERBOSE
-  Serial.println(">HTTP server started");
+  Serial.println("HTTP server started");
   delay(aDelay);
 #endif
   DisplayOneMoreLine("HTTP server started", TEXT_ALIGN_LEFT);

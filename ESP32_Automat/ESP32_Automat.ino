@@ -17,8 +17,8 @@
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
 #define NTP_OFFSET 7200 // 3600 = 1h en hiver ; 7200 = 2h en été
 #define NTP_PERIOD 30000 // milisecondes
-#define EEPROM_OUTPUT
-//#define EEPROM_RESET
+#define PREFERENCES_OUTPUT
+//#define PREFERENCES_RESET
 #define CLOSURE_TEMPO
 
 // USB serial line bitrate
@@ -30,18 +30,6 @@
 #define idx_automate  50
 #define idx_posVolet  51
 
-// temp. offset for Water & Air thermistor
-#define TEMPOFFSETINT   -0.5
-
-// Offset de température pour ouvrir la piscine
-//  - Ouverture volet si (AirTemp > WaterTemp + TEMPOFFSETTHRESHOLD)
-//  - Fermeture volet si (AirTemp < WaterTemp + TEMPOFFSETTHRESHOLD - TrimDelta)
-#define TEMPOFFSETTHRESHOLD 1.0
-
-// Nombre de périodes 'periodColdTimer' pendant lesquelles la température
-// à été vue basse avant de femer le volet (protection contre le passage de nuage)
-#define NBPERIODCOLD 15 // * periodColdTimer = durée en milisecondes
-
 // Data wire is plugged into pin 7 on the Arduino
 #define ONE_WIRE_BUS 7
 #define ONE_WIRE_WATER_TEMP_DEVICE 0 // swap with device 1 if temperature does not correspond
@@ -51,6 +39,7 @@
 //-------------------------------------------------
 //   INCLUSION
 //-------------------------------------------------
+#include <Preferences.h>
 #include <EEPROM.h>
 #include "NTPClient.h"
 #include <WiFi.h>
@@ -202,24 +191,10 @@ struct Automat_2_state_T {
 };
 Automat_2_state_T Automat_2_state;
 
-// Paramètres de fonctionnement de l'automate
-struct AutomatParam_T
-{
-  float Seuil         = 0.0;
-  float Hysteresis    = 0.0;
-  float TrimDelta     = 1.0;
-  float OffsetAir     = 0.0;
-  float OffsetEau     = 0.0;
-};
-AutomatParam_T AutomatParam;
-
 // Etat de l'automate et de la piscine
-struct PoolState_T
-{
+struct PoolState_T {
   float AirTemp       = 0.0;
   float WaterTemp     = 0.0;
-  float MaxIntTemp    = 0.0;
-  float IntTemp       = 0.0;
   String AutomateString = "";
   String VoletString = "";
 };
@@ -258,6 +233,9 @@ uint8_t DallasDeviceCount;
 // arrays to hold device addresses
 DeviceAddress Device0_Thermometer, Device1_Thermometer;
 
+// préférences de réglage de l'application
+Preferences preferences;
+
 // WiFi transmission
 int WiFiserialCycle = 1;
 
@@ -278,17 +256,18 @@ void drawDeviceInfoStatus(OLEDDisplay * display, OLEDDisplayUiState * state, int
 void StartWEBserver ();
 void BlinkRedAutoLED ();
 void MeasurePeriodOfCold();
+void parseString(String receivedString);
 void SetWaterTempOffset(float Offset);
-float GetWaterTempOffset();
 void SetAirTempOffset(float Offset);
-float GetAirTempOffset();
-void ResetMaxIntTempEEPROM();
-void SetMaxIntTemp(float IntTemp);
-float GetMaxIntTemp();
-void ResetOffsetEEPROM();
-void ResetEEPROM();
-void DumpEEPROM();
-byte EEPROMisReseted();
+void SetSeuil(float Seuil);
+void SetHysteresis(float Hysteresis);
+int NbPeriodCold();
+float Seuil();
+float Hysteresis();
+float AirTempOffset();
+float WaterTempOffset();
+void ResetPreferences();
+void DumpPreferences();
 void print1wireAddress(DeviceAddress deviceAddress);
 void print1wireTemperature(DeviceAddress deviceAddress);
 void DisplayWaterTemperatureOnLED (int WaterTemp);
@@ -313,24 +292,51 @@ int overlaysCount = 1;
 // SETUP
 //--------------------------------------------------------------------
 void setup() {
-  // reserve n bytes for the Strings: to avoid dynamic realocations
-  PoolState.AutomateString.reserve(50);
-  PoolState.VoletString.reserve(50);
-  inputString.reserve(200);
-
   //-------------------------------
   // initialize serial
   //-------------------------------
   Serial.begin(USBSERIAL_BITRATE);
   delay(10);
 
+  // reserve n bytes for the Strings: to avoid dynamic realocations
+  PoolState.AutomateString.reserve(50);
+  PoolState.VoletString.reserve(50);
+  inputString.reserve(200);
+
+#if defined VERBOSE
+  Serial.println("");
+  Serial.println(F("--------------------------"));
+  delay(aDelay);
+  Serial.println(F("  ESP01 is booting "));
+  delay(aDelay);
+  Serial.println(F("--------------------------"));
+  delay(aDelay);
+  Serial.print(F("  VERSION = ")); Serial.println(VERSION);
+  delay(aDelay);
+  Serial.println(F("  I was compiled " __DATE__ ));
+  delay(aDelay);
+  Serial.println(F("--------------------------"));
+  delay(aDelay);
+#endif
+
+  //------------------------------------------
+  // reset / dump application preferences
+  //------------------------------------------
+  // Open Preferences with my-app namespace. Each application module, library, etc
+  // has to use a namespace name to prevent key name collisions. We will open storage in
+  // RW-mode (second parameter has to be false).
+  // Note: Namespace name is limited to 15 chars.
+  preferences.begin("app-pref", false);
+#if defined PREFERENCES_RESET
+  // initialize Preferences value
+  ResetPreferences();
+#endif
+  DumpPreferences();
+
   //-------------------------------
   // initialize ports
   //-------------------------------
   // inputs
-  //  pinMode(pAirR, INPUT);
-  //  pinMode(pWaterR, INPUT);
-  //  pinMode(pTrimDelta, INPUT);
   //  pinMode(pIntTempR, INPUT);
   pinMode(pAutoSwitch, INPUT_PULLUP);
   // outputs
@@ -372,23 +378,6 @@ void setup() {
   DisplayOneMoreLine("VERSION : " + String(VERSION), TEXT_ALIGN_CENTER);
   DisplayOneMoreLine("compiled " + String(__DATE__), TEXT_ALIGN_CENTER);
 
-
-#if defined VERBOSE
-  Serial.println("");
-  Serial.println(F("--------------------------"));
-  delay(aDelay);
-  Serial.println(F("  ESP01 is booting "));
-  delay(aDelay);
-  Serial.println(F("--------------------------"));
-  delay(aDelay);
-  Serial.print(F("  VERSION = ")); Serial.println(VERSION);
-  delay(aDelay);
-  Serial.println(F("  I was compiled " __DATE__ ));
-  delay(aDelay);
-  Serial.println(F("--------------------------"));
-  delay(aDelay);
-#endif
-
   Serial.setDebugOutput(false);
 
   //--------------------------------------------------------------------
@@ -410,12 +399,6 @@ void setup() {
   TimerColdID = timer.setInterval(periodColdTimer, MeasurePeriodOfCold); // créer le timer
   timer.disable(TimerColdID); // désactiver le timer en attendant d'en avoir besoin
 #endif
-
-#if defined EEPROM_RESET
-  // initialize EEPROM value
-  ResetEEPROM();
-#endif
-  DumpEEPROM();
 
   //--------------------------------------------------------------------
   // INITIALISATION DES CAPTEURS DE TEMPERATURE
@@ -495,7 +478,7 @@ void loop() {
     //-------------------------------------------------------
     //  Stocker Temp interieure max dans EEPROM
     //-------------------------------------------------------
-#if defined EEPROM_OUTPUT
+#if defined PREFERENCES_OUTPUT
     //    SetMaxIntTemp(IntTempR);
 #endif
 
@@ -532,7 +515,7 @@ void loop() {
       // UPDATE DOMOTICZ the string when a newline arrives:
       //--------------------------------------------------
       if (stringComplete) {
-        //parseString(inputString);
+        parseString(inputString);
       }
     }
 
@@ -564,7 +547,7 @@ void loop() {
 //***************************************************************
 boolean LongPeriodOfLowAirTemp ()
 {
-  return (PeriodOfLowAirTemp >= NBPERIODCOLD);
+  return (PeriodOfLowAirTemp >= NbPeriodCold());
 }
 
 //**************************************************************
@@ -576,7 +559,7 @@ void MeasurePeriodOfCold()
   Serial.println("-------------------------------- -TIMER CALLBACK------------------------------ -");
   Serial.print(F("Millis = "));    Serial.println(currentMillis);
 #endif
-  if (PoolState.AirTemp < (PoolState.WaterTemp + TEMPOFFSETTHRESHOLD - AutomatParam.TrimDelta))
+  if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis()))
   {
     PeriodOfLowAirTemp = PeriodOfLowAirTemp + 1;
 #if defined DEBUG
