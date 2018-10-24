@@ -154,8 +154,8 @@ String getPageCommands() {
   page +=         "<em>Commandes disponibles</em>";
   page +=       "</h3>";
   page +=       "<a href=/update_IDE target=blank class='btn btn-danger'  >Mettre a jour le logiciel IDE OTA</a><br>";
-  page +=       "<a href=/binfile    target=blank class='btn btn-danger'  >Mettre a jour le logiciel WEB OTA</a><br>";
-  page +=       "<a href=/restart_e  target=blank class='btn btn-danger'  >Red&eacute;marrer ESP</a><br>";
+  page +=       "<a href=/update_WEB target=blank class='btn btn-danger'  >Mettre a jour le logiciel WEB OTA</a><br>";
+  page +=       "<a href=/restart    target=blank class='btn btn-danger'  >Red&eacute;marrer ESP</a><br>";
   page +=       "<a href=/reset_offs target=blank class='btn btn-warning' >Reset temp offsets sur Arduino</a><br>";
   page +=       "<a href=/info       target=blank class='btn btn-success' >Obtenir ces informations au format text</a><br>";
 
@@ -256,8 +256,8 @@ void handleTextInfo() {
   message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   message += "\n\nCommands: ";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";
-  message += "\n   http://" + String(Local_Name) + ".local/binfile    : mettre a jour le logiciel WEB OTA";
-  message += "\n   http://" + String(Local_Name) + ".local/restart_e  : redemarrer ESP";
+  message += "\n   http://" + String(Local_Name) + ".local/update_WEB : mettre a jour le logiciel WEB OTA";
+  message += "\n   http://" + String(Local_Name) + ".local/restart    : redemarrer ESP";
   message += "\n   http://" + String(Local_Name) + ".local/reset_offs : reset temp offsets";
   message += "\n   http://" + String(Local_Name) + ".local/eau_plus   : offeset eau +0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/eau_moins  : offeset eau -0.25 degre";
@@ -269,68 +269,65 @@ void handleTextInfo() {
 }
 
 //--------------------------------------------------------------------
+void handleRestart_ESP() {
+  String message = "Restarting the " + String(Local_Name) + "...";
+  server.send(200, "text/plain", message);
+  Serial.println(message);
+  restartFlag = true;
+}
+
+//--------------------------------------------------------------------
 void handleIDE_OTA() {
   String message = "Initialisation of software update server OTA via IDE...";
   server.send(200, "text/plain", message);
-  Serial.println(">Initialisation of software update server OTA via IDE...");
+  Serial.println(message);
   delay(1000);
   Start_WiFi_IDE_OTA();
-}
-
-//--------------------------------------------------------------------
-void handleRestart_ESP() {
-  restartFlag = true;
-  String message = "Restarting the " + String(Local_Name) + "...";
-  server.send(200, "text/plain", message);
-}
-
-//--------------------------------------------------------------------
-void handleRestart_Arduino() {
-  String message = "Restarting Arduino...";
-  server.send(200, "text/plain", message);
-  Serial.println(">Reset Arduino");
-}
-
-//--------------------------------------------------------------------
-void handleResetMaxIntTemp() {
-  String message = "Reseting the Max Internal Temp on the Arduino EEPROM...";
-  server.send(200, "text/plain", message);
-  Serial.println(">Reset MaxIntTemp");
 }
 
 //--------------------------------------------------------------------
 void handleResetOffsetTemp() {
   String message = "Reseting the Offsets Temp on the Arduino EEPROM...";
   server.send(200, "text/plain", message);
-  Serial.println(">Reset OffsetTemp");
+  Serial.println(message);
+  // reseter les offset de mesure températures air et eau
+  ResetOffsetPreferences();
 }
 
 //--------------------------------------------------------------------
 void handleWaterPlus() {
   String message = "Offset eau +0.25 degre...";
   server.send(200, "text/plain", message);
-  Serial.println(">Offset Water Plus");
+  Serial.println(message);
+  // modifier l'offset de mesure de température
+  SetWaterTempOffset(TempOffsetIncrement);
 }
 
 //--------------------------------------------------------------------
 void handleWaterMinus() {
   String message = "Offset eau -0.25 degre...";
   server.send(200, "text/plain", message);
-  Serial.println(">Offset Water Moins");
+  Serial.println(message);
+  // modifier l'offset de mesure de température
+  SetWaterTempOffset(-TempOffsetIncrement);
 }
 
 //--------------------------------------------------------------------
 void handleAirPlus() {
   String message = "Offset air +0.25 degre...";
   server.send(200, "text/plain", message);
-  Serial.println(">Offset Air Plus");
+  Serial.println(message);
+  // modifier l'offset de mesure de température
+  SetAirTempOffset(TempOffsetIncrement);
 }
 
 //--------------------------------------------------------------------
 void handleAirMinus() {
   String message = "Offset air -0.25 degre...";
   server.send(200, "text/plain", message);
-  Serial.println(">Offset Air Moins");
+  Serial.println(message);
+  // modifier l'offset de mesure de température
+  SetAirTempOffset(-TempOffsetIncrement);
 }
 
 //--------------------------------------------------------------------
@@ -360,26 +357,26 @@ void StartWEBserver () {
   server.on("/info", handleTextInfo);
 
   // Page WEB de Restart ESP
-  server.on("/restart_e", handleRestart_ESP);
-
-  // Page WEB de Restart Arduino
-  //server.on("/restart_a", handleRestart_Arduino);
+  server.on("/restart", handleRestart_ESP);
 
   // Page WEB de Update software IDE OTA
   server.on("/update_IDE", handleIDE_OTA);
 
   // Page WEB de Update software WEB OTA
-  server.on("/binfile", HTTP_GET, []() {
+  server.on("/update_WEB", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", serverIndex);
   });
 
   // Page WEB de Update software WEB OTA
   /*handling uploading firmware file */
-  server.on("/update", HTTP_POST, []() {
+  server.on("/update", HTTP_POST,
+  []() {
     server.sendHeader("Connection", "close");
-    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK"); ESP.restart();
-  }, []() {
+    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    ESP.restart();
+  },
+  []() {
     HTTPUpload& upload = server.upload();
     if (upload.status == UPLOAD_FILE_START) {
       Serial.printf("Update: %s\n", upload.filename.c_str());
@@ -399,9 +396,6 @@ void StartWEBserver () {
       }
     }
   });
-
-  // Page WEB de reset MaxIntTemp
-  server.on("/reset_tint", handleResetMaxIntTemp);
 
   // Page WEB de reset Offsets températures
   server.on("/reset_offs", handleResetOffsetTemp);

@@ -40,7 +40,6 @@
 //   INCLUSION
 //-------------------------------------------------
 #include <Preferences.h>
-#include <EEPROM.h>
 #include "NTPClient.h"
 #include <WiFi.h>
 #include <WebServer.h>
@@ -441,7 +440,10 @@ void setup() {
 // LOOP
 //--------------------------------------------------------------------
 void loop() {
-  if (restartFlag) ESP.restart();
+  if (restartFlag) {
+    preferences.end();
+    ESP.restart();
+  }
 
   //-------------------------------------------------------
   //  Executer les timers
