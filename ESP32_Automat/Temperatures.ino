@@ -166,10 +166,10 @@ void AcquireTemperatures()
     Serial.println(Temp);
 #endif
   }
-  //#if defined DEBUG
-  //Serial.print("Air Temperature is: ");
-  //Serial.println(AirTemp);
-  //#endif
+#if defined DEBUG
+  Serial.print("Air Temperature is: ");
+  Serial.println(PoolState.AirTemp);
+#endif
 
   // read the value from the sensor: Water Temperature
   //WaterTemp = TemperatureFrom3950NTC (pWaterR) + TEMPOFFSETWATER;
@@ -182,11 +182,10 @@ void AcquireTemperatures()
     Serial.println(Temp);
 #endif
   }
-  //#if defined DEBUG
-  //Serial.print("Water Temperature is: ");
-  //Serial.println(WaterTemp);
-  //#endif
-
+#if defined DEBUG
+  Serial.print("Water Temperature is: ");
+  Serial.println(PoolState.WaterTemp);
+#endif
 }
 
 //**********************************************

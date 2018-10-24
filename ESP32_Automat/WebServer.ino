@@ -1,3 +1,5 @@
+void ResetOffsetPreferences();
+
 //-------------------------------------------------------
 // WEB PAGE FOR SLECTING THE BIN FILE TO UPLOAD TO ESP32
 //-------------------------------------------------------
@@ -300,7 +302,7 @@ void handleWaterPlus() {
   server.send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
-  SetWaterTempOffset(TempOffsetIncrement);
+  SetWaterTempOffset(TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------
@@ -309,7 +311,7 @@ void handleWaterMinus() {
   server.send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
-  SetWaterTempOffset(-TempOffsetIncrement);
+  SetWaterTempOffset(-TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------
@@ -318,7 +320,7 @@ void handleAirPlus() {
   server.send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
-  SetAirTempOffset(TempOffsetIncrement);
+  SetAirTempOffset(TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------
@@ -327,7 +329,7 @@ void handleAirMinus() {
   server.send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
-  SetAirTempOffset(-TempOffsetIncrement);
+  SetAirTempOffset(-TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------

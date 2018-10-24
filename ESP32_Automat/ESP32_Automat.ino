@@ -12,14 +12,16 @@
 #define SOFTWARE "ESP32_POOL"
 #define VERSION "0.1.0"
 
-//#define DEBUG
+#define DEBUG
+#define USB_OUTPUT
 #define VERBOSE // Infos de version et de connection WiFi
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
-#define NTP_OFFSET 7200 // 3600 = 1h en hiver ; 7200 = 2h en été
-#define NTP_PERIOD 30000 // milisecondes
 #define PREFERENCES_OUTPUT
 //#define PREFERENCES_RESET
 #define CLOSURE_TEMPO
+#define NTP_OFFSET 7200 // 3600 = 1h en hiver ; 7200 = 2h en été
+#define NTP_PERIOD 30000 // milisecondes
+#define TEMPOFFSETINCREMENT 0.25
 
 // USB serial line bitrate
 #define USBSERIAL_BITRATE 115200
@@ -273,6 +275,8 @@ void DisplayWaterTemperatureOnLED (int WaterTemp);
 void SampleTemperatures();
 void InitTemperatureSensors();
 String String1wireAddress(DeviceAddress deviceAddress);
+boolean Start_WiFi_IDE_OTA();
+void SendDataUSB();
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
