@@ -120,9 +120,6 @@ const int pDummy10    =  26;  // spare
 const int pDummy11    =  27;  // spare
 const int pRelay2     =  12;  // the number of the Relay2 pin
 const int pRelay1     =  14;  // the number of the Relay1 pin
-//const int pAirR =         A0; // the number of the AirR pin
-//const int pWaterR =       A1; // the number of the WaterR pin
-//const int pTrimDelta =    A2; // the number of the TrimDelta pin
 //const int pIntTempR =     A3; // the number of the IntTempR pin
 // set PWM channels parameters
 const int cTempLEDblue  = 0;
@@ -173,24 +170,26 @@ String DateNTP = "";
 // OLED variables
 int Ypos = 0;
 
-// Automat 1
+// Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
 const int MANUAL    = 0;
 const int AUTOMATIC = 1;
-struct Automat_1_state_T {
+struct Automat_Mode_state_T {
   int ModeState = MANUAL;
   int prevModeState = MANUAL;
+  boolean ErrorMode = false;
 };
-Automat_1_state_T Automat_1_state;
+Automat_Mode_state_T Automat_Mode_state;
 
-// Automat 2
+// Automat 2 : Commande Volet roulant CLOSE_CMD_ACTIVATED || OPEN_CMD_ACTIVATED || UNDEF_CMD
 const int CLOSE_CMD_ACTIVATED = 0;
 const int OPEN_CMD_ACTIVATED  = 1;
 const int UNDEF_CMD           = 2;
-struct Automat_2_state_T {
+struct Automat_Cmd_state_T {
   int CommandState     = UNDEF_CMD;
   int prevCommandState = UNDEF_CMD;
+  boolean ErrorCmd  = false;
 };
-Automat_2_state_T Automat_2_state;
+Automat_Cmd_state_T Automat_Cmd_state;
 
 // Etat de l'automate et de la piscine
 struct PoolState_T {
@@ -203,7 +202,7 @@ PoolState_T PoolState;
 
 // Variables
 int AutoLED =    LOW;
-int AutoSwitch = HIGH; // Automatic = FERME/LOW, Manual = OUVERT/HIGH
+int AutoSwitch = HIGH; // Manual = OUVERT = HIGH || Automatic = FERME  = LOW
 int AutoSwitchState = MANUAL;
 int TempLEDred =   0;
 int TempLEDgreen = 0;
@@ -215,8 +214,6 @@ float Temp =       0.0;
 boolean ErrorTemp = false;
 boolean ErrorTemp0 = false;
 boolean ErrorTemp1 = false;
-boolean ErrorMode = false;
-boolean ErrorCmd  = false;
 
 String inputString = "";         // a string to hold incoming data
 String url = "";
@@ -277,6 +274,7 @@ void InitTemperatureSensors();
 String String1wireAddress(DeviceAddress deviceAddress);
 boolean Start_WiFi_IDE_OTA();
 void SendDataUSB();
+void BlinkRedAutoLED;
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
@@ -309,17 +307,11 @@ void setup() {
 #if defined VERBOSE
   Serial.println("");
   Serial.println(F("--------------------------"));
-  delay(aDelay);
   Serial.println(F("  ESP01 is booting "));
-  delay(aDelay);
   Serial.println(F("--------------------------"));
-  delay(aDelay);
   Serial.print(F("  VERSION = ")); Serial.println(VERSION);
-  delay(aDelay);
   Serial.println(F("  I was compiled " __DATE__ ));
-  delay(aDelay);
   Serial.println(F("--------------------------"));
-  delay(aDelay);
 #endif
 
   //------------------------------------------
@@ -482,11 +474,9 @@ void loop() {
     DisplayWaterTemperatureOnLED (PoolState.WaterTemp);
 
     //-------------------------------------------------------
-    //  Stocker Temp interieure max dans EEPROM
+    //  EXECUTE STATE MACHINES
     //-------------------------------------------------------
-#if defined PREFERENCES_OUTPUT
-    //    SetMaxIntTemp(IntTempR);
-#endif
+    AutomatRun(Automat_Mode_state, Automat_Cmd_state, AutoSwitchState);
 
     //-------------------------------------------------------
     // RECUPERER LES CARACTERES ARRIVANT SUR LA LIAISON SERIE
@@ -548,48 +538,4 @@ void loop() {
     TimeNTP = timeClient.getFormattedTime();
     DateNTP = timeClient.getFormattedDate();
   }
-}
-
-//***************************************************************
-boolean LongPeriodOfLowAirTemp ()
-{
-  return (PeriodOfLowAirTemp >= NbPeriodCold());
-}
-
-//**************************************************************
-//  Measure how long the air temp is lower than water temp
-//***************************************************************
-void MeasurePeriodOfCold()
-{
-#if defined DEBUG
-  Serial.println("-------------------------------- -TIMER CALLBACK------------------------------ -");
-  Serial.print(F("Millis = "));    Serial.println(currentMillis);
-#endif
-  if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis()))
-  {
-    PeriodOfLowAirTemp = PeriodOfLowAirTemp + 1;
-#if defined DEBUG
-    Serial.print(F("Duration = "));    Serial.println(PeriodOfLowAirTemp);
-#endif
-  }
-  else
-    PeriodOfLowAirTemp = 0;
-}
-
-//********************************************
-//  blink Red Auto LED when in AUTOMATIC Mode
-//********************************************
-void BlinkRedAutoLED ()
-{
-  if (ErrorTemp)
-    // Allumer la LED rouge en fixe
-    digitalWrite(pAutoLED, HIGH);
-  else if (Automat_1_state.ModeState == AUTOMATIC) {
-    // Faire clignoter la LED rouge
-    AutoLED = !AutoLED;
-    digitalWrite(pAutoLED, AutoLED);
-  }
-  else
-    // Eteindre la LED rouge
-    digitalWrite(pAutoLED, LOW);
 }

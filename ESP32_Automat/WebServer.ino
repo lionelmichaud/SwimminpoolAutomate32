@@ -424,7 +424,6 @@ void StartWEBserver () {
   server.begin();
 #if defined VERBOSE
   Serial.println("HTTP server started");
-  delay(aDelay);
 #endif
   DisplayOneMoreLine("HTTP server started", TEXT_ALIGN_LEFT);
 }

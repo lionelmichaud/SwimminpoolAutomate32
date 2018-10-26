@@ -3,8 +3,7 @@
 //-----------------------------------------------
 boolean StartWiFiSoftAP() {
 #if defined VERBOSE
-  Serial.println(">Wi-Fi access point starting...");
-  delay(aDelay);
+  Serial.println("Wi-Fi access point starting...");
 #endif
 
   boolean result = WiFi.softAP(Automat_ssid, Automat_pwd); //WiFi.softAP(Automat_ssid, Automat_pwd);
@@ -113,7 +112,7 @@ boolean Start_WiFi_IDE_OTA() {
 
   ArduinoOTA.begin();
 #if defined VERBOSE
-  Serial.println(">IDE Update server initialized");
+  Serial.println("IDE Update server initialized");
   delay(aDelay);
 #endif
 }
@@ -128,14 +127,12 @@ boolean ConnectToWiFi() {
   //--------------------
 #if defined VERBOSE
   Serial.println("Wi-Fi scan start");
-  delay(aDelay);
 #endif
 
   // WiFi.scanNetworks will return the number of networks found
   int n = WiFi.scanNetworks();
 #if defined VERBOSE
   Serial.println("Wi-Fi scan done");
-  delay(aDelay);
 #endif
   // clear the display
   display.clear();
@@ -149,7 +146,6 @@ boolean ConnectToWiFi() {
   if (n == 0) {
 #if defined VERBOSE
     Serial.println(" no Wi-Fi network found !!");
-    delay(aDelay);
 #endif
     DisplayAlert("No Wi-Fi network found !!");
     display.setFont(ArialMT_Plain_10);
@@ -160,7 +156,6 @@ boolean ConnectToWiFi() {
 #if defined VERBOSE
     Serial.print(" "); Serial.print(n);
     Serial.println(" Wi-Fi networks found:");
-    delay(aDelay);
 #endif
     //DisplayOneMoreLine(String(n) + " Wi-Fi networks found:", TEXT_ALIGN_LEFT);
     bestRSSI = -600;
@@ -207,7 +202,6 @@ boolean ConnectToWiFi() {
     Serial.println("");
     Serial.print("Connecting to Wifi : ");
     Serial.println(selected_ssid);
-    delay(aDelay);
 #endif
     DisplayOneMoreLine("Connecting to : " + String(selected_ssid), TEXT_ALIGN_LEFT);
 
@@ -245,17 +239,14 @@ boolean ConnectToWiFi() {
 #if defined VERBOSE
     Serial.println("");
     Serial.println("WiFi connected");
-    delay(aDelay);
     the_IP = WiFi.localIP();
     the_IP_String = String(the_IP[0]) + "." + String(the_IP[1]) + "." + String(the_IP[2]) + "." + String(the_IP[3]);
     Serial.print("  IP address: ");
     Serial.println(the_IP);
-    delay(aDelay);
     WiFi.macAddress(mac);
     the_MAC_String = String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX);
     Serial.print("  MAC address: ");
     Serial.println(the_MAC_String);
-    delay(aDelay);
 #endif
 
     // clear the display
@@ -276,7 +267,6 @@ boolean ConnectToWiFi() {
     //--------------------
     // START MDNS SERVER
     //--------------------
-    delay(1000);
     if (!MDNS.begin(Local_Name)) {
       DisplayAlert("Error setting up MDNS responder !");
       display.setFont(ArialMT_Plain_10);
