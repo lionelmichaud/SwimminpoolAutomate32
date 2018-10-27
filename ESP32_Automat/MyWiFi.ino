@@ -3,24 +3,25 @@
 //-----------------------------------------------
 boolean StartWiFiSoftAP() {
 #if defined VERBOSE
-  Serial.println(">Wi-Fi access point starting...");
-  delay(aDelay);
+  Serial.println("Wi-Fi access point starting...");
 #endif
 
   boolean result = WiFi.softAP(Automat_ssid, Automat_pwd); //WiFi.softAP(Automat_ssid, Automat_pwd);
   delay(500);
 
+  // clear the display
+  display.clear();
+  Ypos = 0;
+
   if (result == true) {
 #if defined VERBOSE
-    Serial.println(">Wi-Fi access point started");
+    Serial.println("Wi-Fi access point started");
 #endif
-    display.drawString(64, Ypos, "Wi-Fi access point started");
-    Ypos += fontsize;
-    display.display();
+    DisplayOneMoreLine("Wi-Fi access point started", TEXT_ALIGN_LEFT);
   }
   else {
 #if defined VERBOSE
-    Serial.println(">Wi-Fi access point failed!");
+    Serial.println("Wi-Fi access point failed!");
 #endif
     DisplayAlert("Wi-Fi access point failed !");
     display.setFont(ArialMT_Plain_10);
@@ -30,13 +31,11 @@ boolean StartWiFiSoftAP() {
   AP_IP = WiFi.softAPIP();
   the_AP_IP_String = String(AP_IP[0]) + "." + String(AP_IP[1]) + "." + String(AP_IP[2]) + "." + String(AP_IP[3]);
 #if defined VERBOSE
-  Serial.print(">  AP IP address: ");
+  Serial.print("  AP IP address: ");
   Serial.println(AP_IP);
 #endif
 
-  display.drawString(64, Ypos, "AP IP @ " + the_AP_IP_String);
-  Ypos += fontsize;
-  display.display();
+  DisplayOneMoreLine("AP IP @ " + the_AP_IP_String, TEXT_ALIGN_LEFT);
 
   return true;
 }
@@ -82,25 +81,25 @@ boolean Start_WiFi_IDE_OTA() {
     display.clear();
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
-    display.drawString(display.getWidth()/2, display.getHeight()/2 - 10, "Start updating " + type);
+    display.drawString(display.getWidth() / 2, display.getHeight() / 2 - 10, "Start updating " + type);
     display.display();
   });
-  
+
   ArduinoOTA.onEnd([]() {
     Serial.println("\nEnd");
     display.clear();
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
-    display.drawString(display.getWidth()/2, display.getHeight()/2, "Restart");
+    display.drawString(display.getWidth() / 2, display.getHeight() / 2, "Restart");
     display.display();
   });
-  
+
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     display.drawProgressBar(4, 32, 120, 8, progress / (total / 100) );
     display.display();
   });
-  
+
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
@@ -110,10 +109,10 @@ boolean Start_WiFi_IDE_OTA() {
     else if (error == OTA_END_ERROR) Serial.println("End Failed");
     ESP.restart();
   });
-  
+
   ArduinoOTA.begin();
 #if defined VERBOSE
-  Serial.println(">IDE Update server initialized");
+  Serial.println("IDE Update server initialized");
   delay(aDelay);
 #endif
 }
@@ -127,15 +126,13 @@ boolean ConnectToWiFi() {
   // SCAN WI-FI
   //--------------------
 #if defined VERBOSE
-  Serial.println(">Wi-Fi scan start");
-  delay(aDelay);
+  Serial.println("Wi-Fi scan start");
 #endif
 
   // WiFi.scanNetworks will return the number of networks found
   int n = WiFi.scanNetworks();
 #if defined VERBOSE
-  Serial.println(">Wi-Fi scan done");
-  delay(aDelay);
+  Serial.println("Wi-Fi scan done");
 #endif
   // clear the display
   display.clear();
@@ -148,8 +145,7 @@ boolean ConnectToWiFi() {
   //--------------------------------------------------
   if (n == 0) {
 #if defined VERBOSE
-    Serial.println("> no Wi-Fi network found !!");
-    delay(aDelay);
+    Serial.println(" no Wi-Fi network found !!");
 #endif
     DisplayAlert("No Wi-Fi network found !!");
     display.setFont(ArialMT_Plain_10);
@@ -158,9 +154,8 @@ boolean ConnectToWiFi() {
   else
   {
 #if defined VERBOSE
-    Serial.print("> "); Serial.print(n);
+    Serial.print(" "); Serial.print(n);
     Serial.println(" Wi-Fi networks found:");
-    delay(aDelay);
 #endif
     //DisplayOneMoreLine(String(n) + " Wi-Fi networks found:", TEXT_ALIGN_LEFT);
     bestRSSI = -600;
@@ -189,7 +184,7 @@ boolean ConnectToWiFi() {
       //--------------------------------------------
       // Print SSID and RSSI for each network found
       //--------------------------------------------
-      Serial.print(">   "); Serial.print(i + 1);
+      Serial.print("   "); Serial.print(i + 1);
       Serial.print(": ");
       Serial.print(WiFi.SSID(i));
       Serial.print(" (RSSI=");
@@ -205,9 +200,8 @@ boolean ConnectToWiFi() {
 
 #if defined VERBOSE
     Serial.println("");
-    Serial.print(">Connecting to Wifi : ");
+    Serial.print("Connecting to Wifi : ");
     Serial.println(selected_ssid);
-    delay(aDelay);
 #endif
     DisplayOneMoreLine("Connecting to : " + String(selected_ssid), TEXT_ALIGN_LEFT);
 
@@ -231,7 +225,7 @@ boolean ConnectToWiFi() {
       // redémarrer si pas de connection au bout de 30 secondes
       if (connectionAttemps == MaxAttempts) {
 #if defined VERBOSE
-        Serial.println(">Rebooting ESP...");
+        Serial.println("Rebooting ESP...");
 #endif
         DisplayAlert("No connection. Rebooting ESP...");
         ESP.restart();
@@ -244,18 +238,15 @@ boolean ConnectToWiFi() {
 
 #if defined VERBOSE
     Serial.println("");
-    Serial.println(">WiFi connected");
-    delay(aDelay);
+    Serial.println("WiFi connected");
     the_IP = WiFi.localIP();
     the_IP_String = String(the_IP[0]) + "." + String(the_IP[1]) + "." + String(the_IP[2]) + "." + String(the_IP[3]);
-    Serial.print(">  IP address: ");
+    Serial.print("  IP address: ");
     Serial.println(the_IP);
-    delay(aDelay);
     WiFi.macAddress(mac);
     the_MAC_String = String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX);
-    Serial.print(">  MAC address: ");
+    Serial.print("  MAC address: ");
     Serial.println(the_MAC_String);
-    delay(aDelay);
 #endif
 
     // clear the display
@@ -276,17 +267,16 @@ boolean ConnectToWiFi() {
     //--------------------
     // START MDNS SERVER
     //--------------------
-    delay(1000);
     if (!MDNS.begin(Local_Name)) {
       DisplayAlert("Error setting up MDNS responder !");
       display.setFont(ArialMT_Plain_10);
 #if defined VERBOSE
-      Serial.println("> Error setting up MDNS responder!");
+      Serial.println(" Error setting up MDNS responder!");
 #endif
     } else {
       DisplayOneMoreLine("mDNS responder started", TEXT_ALIGN_LEFT);
 #if defined VERBOSE
-      Serial.println(">mDNS responder started");
+      Serial.println("mDNS responder started");
 #endif
     }
     // Add service to MDNS-SD
