@@ -15,7 +15,7 @@ void InitTemperatureSensors() {
   DallasDeviceCount = DallasSensors.getDS18Count();
   Serial.print(DallasDeviceCount, DEC);
   Serial.println(" Dallas devices.");
-  ErrorTemp = (DallasDeviceCount != 2);
+  PoolState.ErrorTemp = (DallasDeviceCount != 2);
 
   // clear the display
   display.clear();
@@ -33,8 +33,8 @@ void InitTemperatureSensors() {
     Serial.println(F("Unable to find address for Device 0"));
     delay (2000);
     DisplayAlert("Unable to find address for Device 0");
-    ErrorTemp0 = true;
-    ErrorTemp = true;
+    PoolState.ErrorTemp0 = true;
+    PoolState.ErrorTemp = true;
   }
   if (DallasSensors.getAddress(Device1_Thermometer, 1)) {
     Serial.print ("Device 1 address : ");
@@ -47,8 +47,8 @@ void InitTemperatureSensors() {
     Serial.println(F("Unable to find address for Device 1"));
     delay (2000);
     DisplayAlert("Unable to find address for Device 1");
-    ErrorTemp1 = true;
-    ErrorTemp = true;
+    PoolState.ErrorTemp1 = true;
+    PoolState.ErrorTemp = true;
   }
 
   // report parasite power requirements
@@ -61,11 +61,11 @@ void InitTemperatureSensors() {
   //  DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
   DallasSensors.setResolution(TEMPERATURE_PRECISION);
 
-  if (!ErrorTemp0) {
+  if (!PoolState.ErrorTemp0) {
     Serial.print("Device 0 Resolution : ");
     Serial.println(DallasSensors.getResolution(Device0_Thermometer), DEC);
   }
-  if (!ErrorTemp1) {
+  if (!PoolState.ErrorTemp1) {
     Serial.print("Device 1 Resolution : ");
     Serial.println(DallasSensors.getResolution(Device1_Thermometer), DEC);
   }
@@ -193,7 +193,7 @@ void AcquireTemperatures()
 //**********************************************
 void SampleTemperatures()
 {
-  if (!ErrorTemp) {
+  if (!PoolState.ErrorTemp) {
     // Send the command to get temperature readings
     DallasSensors.setWaitForConversion(false);  // makes it async
     DallasSensors.requestTemperatures();

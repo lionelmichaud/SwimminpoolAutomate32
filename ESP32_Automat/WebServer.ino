@@ -135,8 +135,8 @@ String getPageDeviceInfo() {
   page +=     "<a class='nav-link btn btn-info' href='#'>Heure <span class='badge badge-light'>" + TimeNTP + "</span></a><br>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(PoolState.AirTemp) + " deg" + "</span></a>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(PoolState.WaterTemp) + " deg" + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + PoolState.AutomateString + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Position du Volet <span class='badge badge-light'>" + PoolState.VoletString + "</span></a>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + CurrentModeString() + "</span></a>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Position du Volet <span class='badge badge-light'>" + CurrentCoverPositionString() + "</span></a>";
   page +=     "<ul>";
   page +=       "Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   page +=     "</ul>";
@@ -253,8 +253,8 @@ void handleTextInfo() {
   message += "\n\nStatus:";
   message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg";
   message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg";
-  message += "\n   Mode automatique  = " + PoolState.AutomateString;
-  message += "\n   Position du Volet = " + PoolState.VoletString;
+  message += "\n   Mode automatique  = " + CurrentModeString();
+  message += "\n   Position du Volet = " + CurrentCoverPositionString();
   message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   message += "\n\nCommands: ";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";

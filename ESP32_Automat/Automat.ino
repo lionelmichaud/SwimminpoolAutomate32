@@ -1,4 +1,52 @@
 //------------------------------------------------------------------------------------------------
+String CurrentModeString() {
+  switch (Automat_Mode.ModeState) {
+    case MANUAL:
+      return "MANUEL";
+    case AUTOMATIC:
+      return "AUTOMATIQUE";
+    default:
+      return "INCONNU";
+  }
+}
+
+//------------------------------------------------------------------------------------------------
+String CurrentModeDomoticz() {
+  switch (Automat_Mode.ModeState) {
+    case MANUAL:
+      return "Off";
+    case AUTOMATIC:
+      return "On";
+    default:
+      return "";
+  }
+}
+
+//------------------------------------------------------------------------------------------------
+String CurrentCoverPositionString() {
+  switch (Automat_Cmd.CommandState) {
+    case CLOSE_CMD_ACTIVATED:
+      return "FERME";
+    case OPEN_CMD_ACTIVATED:
+      return "OUVERT";
+    default:
+      return "INCONNU";
+  }
+}
+
+//------------------------------------------------------------------------------------------------
+String CurrentCoverPositionDomoticz() {
+  switch (Automat_Cmd.CommandState) {
+    case CLOSE_CMD_ACTIVATED:
+      return "On";
+    case OPEN_CMD_ACTIVATED:
+      return "Off";
+    default:
+      return "";
+  }
+}
+
+//------------------------------------------------------------------------------------------------
 boolean LongPeriodOfLowAirTemp ()
 {
   return (PeriodOfLowAirTemp >= NbPeriodCold());
@@ -27,7 +75,7 @@ void MeasurePeriodOfCold()
 //------------------------------------------------------------------------------------------------
 // MANAGE STATE MACHINES
 //------------------------------------------------------------------------------------------------
-void AutomatRun(Automat_Mode_state_T theAutomatMode, Automat_Cmd_state_T theAutomatCmd, int theSwitchState) {
+void AutomatRun(Automat_Mode_T theAutomatMode, Automat_Cmd_T theAutomatCmd, int theSwitchState) {
   switch (theAutomatMode.ModeState) {
 
     case MANUAL:

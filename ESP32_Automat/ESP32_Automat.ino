@@ -88,7 +88,7 @@ const int   port = 8084;
 //  Generally, you should use "unsigned long" for variables that hold time
 //  The value will quickly become too large for an int to store
 const unsigned long intervalUSB  =  60010; // interval at which to send data over USB (milliseconds)
-const unsigned long intervalWiFi =  15000; // interval at which to send data over WiFi (milliseconds)
+const unsigned long intervalWiFi =  30000; // interval at which to send data over WiFi (milliseconds)
 const unsigned long intervalLED  =    500; // interval at which to blink the Red LED (milliseconds)
 const unsigned long intervalTemp  =  5000; // interval at which to sample the temperatures (milliseconds)
 const unsigned long delaySamplingTemp = 750 / (1 << (12 - TEMPERATURE_PRECISION)); // delay to sample the temperatures (milliseconds)
@@ -171,32 +171,34 @@ String DateNTP = "";
 int Ypos = 0;
 
 // Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
-const int MANUAL    = 0;
-const int AUTOMATIC = 1;
-struct Automat_Mode_state_T {
+const int MANUAL     = 0;
+const int AUTOMATIC  = 1;
+const int UNDEF_MODE = 2;
+struct Automat_Mode_T {
   int ModeState = MANUAL;
   int prevModeState = MANUAL;
   boolean ErrorMode = false;
 };
-Automat_Mode_state_T Automat_Mode_state;
+Automat_Mode_T Automat_Mode;
 
 // Automat 2 : Commande Volet roulant CLOSE_CMD_ACTIVATED || OPEN_CMD_ACTIVATED || UNDEF_CMD
 const int CLOSE_CMD_ACTIVATED = 0;
 const int OPEN_CMD_ACTIVATED  = 1;
 const int UNDEF_CMD           = 2;
-struct Automat_Cmd_state_T {
+struct Automat_Cmd_T {
   int CommandState     = UNDEF_CMD;
   int prevCommandState = UNDEF_CMD;
   boolean ErrorCmd  = false;
 };
-Automat_Cmd_state_T Automat_Cmd_state;
+Automat_Cmd_T Automat_Cmd;
 
 // Etat de l'automate et de la piscine
 struct PoolState_T {
   float AirTemp       = 0.0;
   float WaterTemp     = 0.0;
-  String AutomateString = "";
-  String VoletString = "";
+  boolean ErrorTemp = false;
+  boolean ErrorTemp0 = false;
+  boolean ErrorTemp1 = false;
 };
 PoolState_T PoolState;
 
@@ -211,9 +213,6 @@ int Relay1 = HIGH; // Relais au repos => La clé manuelle à la main
 int Relay2 = HIGH; // Relais au repos => Fermé
 int PeriodOfLowAirTemp = 0; // compte le nombre de périodes 'periodColdTimer' pendant lesquelles la temp à été vue basse
 float Temp =       0.0;
-boolean ErrorTemp = false;
-boolean ErrorTemp0 = false;
-boolean ErrorTemp1 = false;
 
 String inputString = "";         // a string to hold incoming data
 String url = "";
@@ -233,9 +232,6 @@ DeviceAddress Device0_Thermometer, Device1_Thermometer;
 
 // préférences de réglage de l'application
 Preferences preferences;
-
-// WiFi transmission
-int WiFiserialCycle = 1;
 
 //--------------------------------------------------
 // functions prototypes
@@ -273,8 +269,12 @@ void SampleTemperatures();
 void InitTemperatureSensors();
 String String1wireAddress(DeviceAddress deviceAddress);
 boolean Start_WiFi_IDE_OTA();
-void SendDataUSB();
-void BlinkRedAutoLED;
+void SendDataOverUSB();
+void BlinkRedAutoLED();
+boolean SwitchRelayAutoManu (int State);
+boolean SwitchRelayOpenCloseCover (int State);
+void AutomatRun(Automat_Mode_T theAutomatMode, Automat_Cmd_T theAutomatCmd, int theSwitchState);
+void SendDataToDomoticz ();
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
@@ -300,8 +300,6 @@ void setup() {
   delay(10);
 
   // reserve n bytes for the Strings: to avoid dynamic realocations
-  PoolState.AutomateString.reserve(50);
-  PoolState.VoletString.reserve(50);
   inputString.reserve(200);
 
 #if defined VERBOSE
@@ -386,7 +384,7 @@ void setup() {
 #if defined USB_OUTPUT
   Serial.print(F("Initialisation timer USB = "));
   Serial.println(millis());
-  timer.setInterval(intervalUSB, SendDataUSB);
+  timer.setInterval(intervalUSB, SendDataOverUSB);
 #endif
 
 #if defined CLOSURE_TEMPO
@@ -430,6 +428,14 @@ void setup() {
   //  Serial.println(F(" > NTP client and timer started"));
   //#endif
   delay(1000);
+  
+  //-------------------------------------------
+  // Timer transmission Wi-Fi vers Domoticz
+  //-------------------------------------------
+  Serial.print("Initialisation timer Wi-Fi = ");
+  Serial.println(millis());
+  TimerWiFi = timer.setInterval(intervalWiFi, SendDataToDomoticz);
+  //timer.restartTimer(TimerWiFi);
 }
 
 //--------------------------------------------------------------------
@@ -476,7 +482,7 @@ void loop() {
     //-------------------------------------------------------
     //  EXECUTE STATE MACHINES
     //-------------------------------------------------------
-    AutomatRun(Automat_Mode_state, Automat_Cmd_state, AutoSwitchState);
+    AutomatRun(Automat_Mode, Automat_Cmd, AutoSwitchState);
 
     //-------------------------------------------------------
     // RECUPERER LES CARACTERES ARRIVANT SUR LA LIAISON SERIE

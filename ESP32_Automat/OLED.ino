@@ -50,7 +50,7 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   if (WiFi.status() == WL_CONNECTED) display->drawXbm(0, 0, wifi_02_width, wifi_02_height, wifi_02_bits);
 
   // center left
-  if (!ErrorTemp0) {
+  if (!PoolState.ErrorTemp0) {
     display->setTextAlignment(TEXT_ALIGN_RIGHT);
     display->setFont(ArialMT_Plain_10);
     display->drawString(43, 0, "D0");
@@ -58,7 +58,7 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   }
 
   // center right
-  if (!ErrorTemp1) {
+  if (!PoolState.ErrorTemp1) {
     display->setTextAlignment(TEXT_ALIGN_RIGHT);
     display->setFont(ArialMT_Plain_10);
     display->drawString(72, 0, "D1");
@@ -81,8 +81,8 @@ void drawPageSoftwareInfo(OLEDDisplay * display, OLEDDisplayUiState * state, int
   display->drawString(0 + x, 10 + y, "SW: " + String(SOFTWARE) + " - " + String(VERSION));
   display->drawString(0 + x, 20 + y, "Compiled :    " + String(__DATE__));
   display->drawString(0 + x, 30 + y, "Dallas devices : " + String(DallasDeviceCount));
-  if (!ErrorTemp0) display->drawString( 0 + x, 40 + y, "  D0: " + String1wireAddress(Device0_Thermometer));
-  if (!ErrorTemp1) display->drawString(64 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
+  if (!PoolState.ErrorTemp0) display->drawString( 0 + x, 40 + y, "  D0: " + String1wireAddress(Device0_Thermometer));
+  if (!PoolState.ErrorTemp1) display->drawString(64 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
 }
 
 void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {

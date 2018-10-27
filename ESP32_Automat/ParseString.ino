@@ -48,14 +48,14 @@ void parseString(String receivedString) {
     Serial.print(">Automate = "); Serial.println(localString);
 #endif
     if (localString.startsWith("On")) {
-      PoolState.AutomateString = "On";
+      Automat_Mode.ModeState = AUTOMATIC;
       //      sendSwitchCmdDomoticz(PoolState.AutomateString, String(idx_automate));
 
     } else if (localString.startsWith("Off")) {
-      PoolState.AutomateString = "Off";
+      Automat_Mode.ModeState = MANUAL;
       //      sendSwitchCmdDomoticz(PoolState.AutomateString, String(idx_automate));
 
-    } else PoolState.AutomateString = "";
+    } else Automat_Mode.ModeState = UNDEF_MODE;
   }
 
   //---------------------------
@@ -69,14 +69,14 @@ void parseString(String receivedString) {
     Serial.print(">Volet = "); Serial.println(localString);
 #endif
     if (localString.startsWith("Ouverture")) {
-      PoolState.VoletString = "Ouverture";
+      Automat_Cmd.CommandState = OPEN_CMD_ACTIVATED;
       //      sendSwitchCmdDomoticz("Off", String(idx_posVolet));
 
     } else if (localString.startsWith("Fermeture")) {
-      PoolState.VoletString = "Fermeture";
+      Automat_Cmd.CommandState = CLOSE_CMD_ACTIVATED;
       //      sendSwitchCmdDomoticz("On", String(idx_posVolet));
 
-    } else PoolState.VoletString = "";
+    } else Automat_Cmd.CommandState = UNDEF_CMD;
   }
 
   //--------------------------------
