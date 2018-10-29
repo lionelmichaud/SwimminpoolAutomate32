@@ -68,8 +68,8 @@ void SendDataOverUSB ()
   Serial.print(F("Sortie LED auto = "));
   Serial.print(AutoLED);
   Serial.println();
-  Serial.print(F("Sortie LED temp = "));
-  Serial.print(TempLEDred); Serial.print(" / "); Serial.print(TempLEDgreen); Serial.print(" / "); Serial.print(TempLEDblue);
+  Serial.print(F("Sortie LED temp = R="));
+  Serial.print(TempLEDred); Serial.print(" / V="); Serial.print(TempLEDgreen); Serial.print(" / B="); Serial.print(TempLEDblue);
   Serial.println();
   Serial.print(F("Sortie Relai 1  = "));
   Serial.print(Relay1 == HIGH ? "REPOS => La clé manuelle à la main" : "ACTIF => L'automate à la main");

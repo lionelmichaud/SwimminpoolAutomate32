@@ -1,31 +1,91 @@
-void ReadConfig(const char *filename, Config_T &config) {
+//---------------------------------------------
+// LIST DIRECTORY ON A FILE SYSTEM
+//---------------------------------------------
+void listDir(fs::FS &fs, const char * dirname, uint8_t levels) {
+  Serial.printf("Listing directory: %s\r\n", dirname);
+
+  File root = fs.open(dirname);
+  if (!root) {
+    Serial.println("- failed to open directory");
+    return;
+  }
+  if (!root.isDirectory()) {
+    Serial.println(" - not a directory");
+    return;
+  }
+
+  File file = root.openNextFile();
+  while (file) {
+    if (file.isDirectory()) {
+      Serial.print("  DIR : ");
+      Serial.println(file.name());
+      if (levels) {
+        listDir(fs, file.name(), levels - 1);
+      }
+    } else {
+      Serial.print("  FILE: ");
+      Serial.print(file.name());
+      Serial.print("\tSIZE: ");
+      Serial.println(file.size());
+    }
+    file = root.openNextFile();
+  }
+}
+
+//---------------------------------------------
+// READ A JSON CONFIG FILE ON SPIFFS
+//---------------------------------------------
+boolean ReadConfig(const char *filename, Configuration_T& Config) {
+  // List SPIFFS directory
+  listDir(SPIFFS, "/", 0);
+
   // Open file for reading
-  File file = SPIFFS.open(filename);
+  File configFile = SPIFFS.open(filename, "r");
+  if (!configFile) {
+    Serial.println(F("Failed to open config file !"));
+    DisplayAlert("Failed to open config file");
+    return false;
+  }
 
   // Allocate the memory pool on the stack.
   // Don't forget to change the capacity to match your JSON document.
   // Use arduinojson.org/assistant to compute the capacity.
-  StaticJsonBuffer<ConfigCapacity> jsonBuffer;
+  StaticJsonBuffer<JSONBufferConfigCapacity> jsonBuffer;
 
   // Parse the root object
   // JsonObject &root = jsonBuffer.parseObject(file);
-  JsonArray& root = jsonBuffer.parseArray(file);
+  JsonArray& root = jsonBuffer.parseArray(configFile);
   JsonArray& root_ = root;
 
+  // vérifier le bon décodage
   if (!root.success())
   {
-    Serial.println(F("Failed to read file, using default configuration"));
-    DisplayAlert("Failed to read file, using default configuration");
+    Serial.println(F("Failed to read JSON config file, using default configuration"));
+    DisplayAlert("Failed to read config file");
+    return false;
   }
 
-  const char* root_0_ssid = root_[0]["ssid"]; // "Mon BWi-Fi"
-  const char* root_0_password = root_[0]["password"]; // "louannetvanessasontmessourisadorees"
+  // Walk the JsonArray efficiently
+#if defined VERBOSE
+  root_.prettyPrintTo(Serial);
+  Serial.println(); Serial.println("Networks configurations: ");
+#endif
+  Config.NbWiFiNetworks = root_.size();
+  Config.WiFiNetworks = new WiFiNetwok_T[Config.NbWiFiNetworks];
+  int i = 0;
 
-  const char* root_1_ssid = root_[1]["ssid"]; // "Mon Wi-Fi"
-  const char* root_1_password = root_[1]["password"]; // "louannetvanessasontmessourisadorees"
-
-  const char* root_2_ssid = root_[2]["ssid"]; // "Pool"
-  const char* root_2_password = root_[2]["password"]; // "louannetvanessasontmessourisadorees"
+  for (JsonObject& elem : root_) {
+    JsonObject& network = elem;
+    //    const char* ssid = elem["ssid"]; // "Mon BWi-Fi"
+    //    const char* password = elem["password"]; // "louannetvanessasontmessourisadorees"
+    Config.WiFiNetworks[i].ssid = elem["ssid"].as<String>();
+    Config.WiFiNetworks[i].password = elem["password"].as<String>();
+#if defined VERBOSE
+    Serial.print("  - SSID: "); Serial.print(Config.WiFiNetworks[i].ssid);
+    Serial.print("  PASSWORD: "); Serial.println(Config.WiFiNetworks[i].password);
+#endif
+    i++;
+  }
 
   // Copy values from the JsonObject to the Config
   //config.port = root["port"] | 2731;
@@ -37,5 +97,7 @@ void ReadConfig(const char *filename, Config_T &config) {
   //          sizeof(config.password));  // <- destination's capacity
 
   // Close the file (File's destructor doesn't close the file)
-  file.close();
+  configFile.close();
+
+  return true;
 }

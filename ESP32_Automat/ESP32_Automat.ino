@@ -1,8 +1,12 @@
-
+//
 // VERSIONS HISTORY
-
+//
+// VERSION 0.2.1
+//  Paramétrage inversion écran OLED #define Configuration.FlipOLED
+//  Lecture des paramètres réseaux Wi-Fi en fichier SPIFF config JSON (SSID / Password)
+//
 // VERSION 0.2.0
-//  Premièer version complète
+//  Première version complète
 //
 // VERSION 0.1.0
 //  Création
@@ -12,7 +16,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "0.1.0"
+#define VERSION "0.2.1"
 
 #define DEBUG
 #define USB_OUTPUT
@@ -43,6 +47,7 @@
 //-------------------------------------------------
 //   INCLUSION
 //-------------------------------------------------
+#include <FS.h>
 #include <SPIFFS.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
@@ -75,9 +80,8 @@
 // --- Déclaration des constantes globales ---
 //-------------------------------------------------
 const char *ConfigFilename = "/config.json";
-// Compute the required size
-const int ConfigCapacity = JSON_ARRAY_SIZE(5)
-                     + 5 * JSON_OBJECT_SIZE(2);
+// Compute the required size: 6 x réseaux Wi-Fi max possible
+const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 6*JSON_OBJECT_SIZE(2) + 260;
 // paramètres Wi-Fi - station
 const char* Local_Name    = "esp32_pool";
 const char* Pool_ssid     = "Pool";
@@ -138,6 +142,17 @@ const int LEDres  = 8; // bits => 256 levels
 //-------------------------------------------------
 // --- Déclaration des variables globales ---
 //-------------------------------------------------
+// configuration du logiciel
+struct WiFiNetwok_T {
+   String ssid;
+   String password;
+};
+struct Configuration_T {
+   bool FlipOLED = false;
+   int NbWiFiNetworks = 0;
+   WiFiNetwok_T* WiFiNetworks;
+};
+Configuration_T Configuration;
 // client NTP
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", NTP_OFFSET, NTP_PERIOD);
@@ -209,13 +224,6 @@ struct PoolState_T {
 };
 PoolState_T PoolState;
 
-// Configuration that we'll store on disk
-struct Config_T {
-  char ssid[24];
-  char password[38];
-};
-Config_T Config;
-
 // Variables
 int AutoLED =    LOW;
 int AutoSwitch = HIGH; // Manual = OUVERT = HIGH || Automatic = FERME  = LOW
@@ -262,7 +270,6 @@ void drawPageWiFi_ST_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int
 void drawDeviceInfoTemperatures(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
 void drawDeviceInfoStatus(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
 void StartWEBserver ();
-void BlinkRedAutoLED ();
 void MeasurePeriodOfCold();
 void parseString(String receivedString);
 void SetWaterTempOffset(float Offset);
@@ -287,9 +294,9 @@ void SendDataOverUSB();
 void BlinkRedAutoLED();
 boolean SwitchRelayAutoManu (int State);
 boolean SwitchRelayOpenCloseCover (int State);
-void AutomatRun(Automat_Mode_T theAutomatMode, Automat_Cmd_T theAutomatCmd, int theSwitchState);
+void AutomatRun(Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState);
 void SendDataToDomoticz ();
-void ReadConfig(const char *filename, Config_T &config);
+boolean ReadConfig(const char *filename, Configuration_T& Config);
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
@@ -327,7 +334,6 @@ void setup() {
   Serial.println(F("--------------------------"));
 #endif
 
-
   //------------------------------------------
   // reset / dump application preferences
   //------------------------------------------
@@ -345,6 +351,7 @@ void setup() {
   //-------------------------------
   // initialize ports
   //-------------------------------
+  Serial.println(F("Initializing I/O..."));
   // inputs
   //  pinMode(pIntTempR, INPUT);
   pinMode(pAutoSwitch, INPUT_PULLUP);
@@ -388,17 +395,19 @@ void setup() {
   DisplayOneMoreLine("compiled " + String(__DATE__), TEXT_ALIGN_CENTER);
 
   //------------------------------------------
-  // Initialize SPIFF library
+  // INITIALIZE SPIFF LIBRARY
   //------------------------------------------
   while (!SPIFFS.begin()) {
-    Serial.println(F("Failed to initialize SPIFF library"));
-    DisplayAlert("Failed to initialize SPIFF library");
+    Serial.println(F("Failed SPIFF initialization"));
+    DisplayAlert("Failed to initialize SPIFF library !");
   }
 
+  //------------------------------------------
+  // READ JSON CONFIGURATION FILE IN SPIFF
+  //------------------------------------------
   // Should load default config if run for the first time
-  Serial.println(F("Loading configuration..."));
-  ReadConfig(ConfigFilename, Config);
-
+  Serial.println(F("Loading configuration file in SPIFF..."));
+  if (!ReadConfig(ConfigFilename, Configuration)) return;
 
   Serial.setDebugOutput(false);
 

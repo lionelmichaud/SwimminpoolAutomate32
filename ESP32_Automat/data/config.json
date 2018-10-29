@@ -1,18 +1,18 @@
-{
-	"network": {
+[
+	{
 		"ssid" : "Mon BWi-Fi",
 		"password" : "louannetvanessasontmessourisadorees"
 	},
-	"network": {
+	{
 		"ssid" : "Mon Wi-Fi",
 		"password" : "louannetvanessasontmessourisadorees"
 	},
-	"network": {
+	{
 		"ssid" : "Pool",
 		"password" : "louannetvanessasontmessourisadorees"
 	},
-	"network": {
+	{
 		"ssid" : "Garage",
 		"password" : "louannetvanessasontmessourisadorees"
-	},
-}
+	}
+]

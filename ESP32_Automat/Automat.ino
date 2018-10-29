@@ -75,7 +75,7 @@ void MeasurePeriodOfCold()
 //------------------------------------------------------------------------------------------------
 // MANAGE STATE MACHINES
 //------------------------------------------------------------------------------------------------
-void AutomatRun(Automat_Mode_T theAutomatMode, Automat_Cmd_T theAutomatCmd, int theSwitchState) {
+void AutomatRun(Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState) {
   switch (theAutomatMode.ModeState) {
 
     case MANUAL:

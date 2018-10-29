@@ -125,7 +125,7 @@ boolean ConnectToWiFi() {
   // SCAN WI-FI
   //--------------------
 #if defined VERBOSE
-  Serial.println("Wi-Fi scan start");
+  Serial.println("Wi-Fi scan start...");
 #endif
 
   // WiFi.scanNetworks will return the number of networks found
