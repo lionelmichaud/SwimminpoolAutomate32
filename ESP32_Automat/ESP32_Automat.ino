@@ -43,6 +43,8 @@
 //-------------------------------------------------
 //   INCLUSION
 //-------------------------------------------------
+#include <SPIFFS.h>
+#include <ArduinoJson.h>
 #include <Preferences.h>
 #include "NTPClient.h"
 #include <WiFi.h>
@@ -72,7 +74,10 @@
 //-------------------------------------------------
 // --- Déclaration des constantes globales ---
 //-------------------------------------------------
-const int   aDelay = 50; // délai entre lignes envoyées sur Serial
+const char *ConfigFilename = "/config.json";
+// Compute the required size
+const int ConfigCapacity = JSON_ARRAY_SIZE(5)
+                     + 5 * JSON_OBJECT_SIZE(2);
 // paramètres Wi-Fi - station
 const char* Local_Name    = "esp32_pool";
 const char* Pool_ssid     = "Pool";
@@ -204,6 +209,13 @@ struct PoolState_T {
 };
 PoolState_T PoolState;
 
+// Configuration that we'll store on disk
+struct Config_T {
+  char ssid[24];
+  char password[38];
+};
+Config_T Config;
+
 // Variables
 int AutoLED =    LOW;
 int AutoSwitch = HIGH; // Manual = OUVERT = HIGH || Automatic = FERME  = LOW
@@ -277,6 +289,7 @@ boolean SwitchRelayAutoManu (int State);
 boolean SwitchRelayOpenCloseCover (int State);
 void AutomatRun(Automat_Mode_T theAutomatMode, Automat_Cmd_T theAutomatCmd, int theSwitchState);
 void SendDataToDomoticz ();
+void ReadConfig(const char *filename, Config_T &config);
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
@@ -313,6 +326,7 @@ void setup() {
   Serial.println(F("  I was compiled " __DATE__ ));
   Serial.println(F("--------------------------"));
 #endif
+
 
   //------------------------------------------
   // reset / dump application preferences
@@ -373,6 +387,19 @@ void setup() {
   DisplayOneMoreLine("VERSION : " + String(VERSION), TEXT_ALIGN_CENTER);
   DisplayOneMoreLine("compiled " + String(__DATE__), TEXT_ALIGN_CENTER);
 
+  //------------------------------------------
+  // Initialize SPIFF library
+  //------------------------------------------
+  while (!SPIFFS.begin()) {
+    Serial.println(F("Failed to initialize SPIFF library"));
+    DisplayAlert("Failed to initialize SPIFF library");
+  }
+
+  // Should load default config if run for the first time
+  Serial.println(F("Loading configuration..."));
+  ReadConfig(ConfigFilename, Config);
+
+
   Serial.setDebugOutput(false);
 
   //--------------------------------------------------------------------
@@ -430,7 +457,7 @@ void setup() {
   //  Serial.println(F(" > NTP client and timer started"));
   //#endif
   delay(1000);
-  
+
   //-------------------------------------------
   // Timer transmission Wi-Fi vers Domoticz
   //-------------------------------------------

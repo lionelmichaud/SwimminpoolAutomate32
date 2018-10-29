@@ -113,7 +113,6 @@ boolean Start_WiFi_IDE_OTA() {
   ArduinoOTA.begin();
 #if defined VERBOSE
   Serial.println("IDE Update server initialized");
-  delay(aDelay);
 #endif
 }
 
@@ -191,7 +190,6 @@ boolean ConnectToWiFi() {
       Serial.print(theRSSI);
       Serial.println(")");
       //Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
-      delay(aDelay);
 #endif
     }
     char selected_ssid[WiFi.SSID(selectedWiFi).length() + 1]; // tableau de char de la taille du String param+1 (caractère de fin de ligne)
