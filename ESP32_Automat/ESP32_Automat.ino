@@ -149,7 +149,7 @@ struct WiFiNetwok_T {
 };
 struct Configuration_T {
    bool FlipOLED = false;
-   int NbWiFiNetworks = 0;
+   int NbWiFiNetworks = -1;
    WiFiNetwok_T* WiFiNetworks;
 };
 Configuration_T Configuration;
@@ -259,7 +259,7 @@ Preferences preferences;
 // functions prototypes
 //--------------------------------------------------
 boolean StartWiFiSoftAP();
-boolean ConnectToWiFi();
+boolean ConnectToWiFi(Configuration_T Configuration);
 void initializeOLED();
 void DisplayOneMoreLine(String line, OLEDDISPLAY_TEXT_ALIGNMENT textAlignment);
 void DisplayAlert(String AlertText);

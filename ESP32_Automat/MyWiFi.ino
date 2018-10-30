@@ -117,9 +117,27 @@ boolean Start_WiFi_IDE_OTA() {
 }
 
 //-----------------------------------------------
+//   CHECK IF TH WIFI SSID IS ONE OF MINE
+//-----------------------------------------------
+boolean isMyWiFi(Configuration_T Configuration, const char* the_ssid) {
+  for (int j = 0; j < Configuration.NbWiFiNetworks - 1; ++j)
+    if (the_ssid == Configuration.WiFiNetworks[j].ssid) return true;
+  return false;
+}
+
+//-----------------------------------------------
+//   GET THE WIFI PASSWORD IF ITS ONE OF MINE
+//-----------------------------------------------
+String myWiFiPassword(Configuration_T Configuration, const char* the_ssid) {
+  for (int j = 0; j < Configuration.NbWiFiNetworks - 1; ++j)
+    if (the_ssid == Configuration.WiFiNetworks[j].ssid) return Configuration.WiFiNetworks[j].password;
+  return "";
+}
+
+//-----------------------------------------------
 // . CONNECT TO BEST AVAILABLE WIFI AP SIGNAL
 //-----------------------------------------------
-boolean ConnectToWiFi() {
+boolean ConnectToWiFi(Configuration_T Configuration) {
   const int MaxAttempts = 60;
   //--------------------
   // SCAN WI-FI
@@ -167,11 +185,11 @@ boolean ConnectToWiFi() {
       theRSSI = WiFi.RSSI(i);
 
       // if (WiFi.SSID(i) == MonBWiFi_ssid) or (WiFi.SSID(i) == Garage_ssid)) {
-      if (
-        (WiFi.SSID(i) == MonWiFi_ssid) or
-        (WiFi.SSID(i) == MonBWiFi_ssid) or
-        (WiFi.SSID(i) == Pool_ssid) or
-        (WiFi.SSID(i) == Garage_ssid) ) {
+      if (isMyWiFi(Configuration, WiFi.SSID(i))) {
+        //        (WiFi.SSID(i) == MonWiFi_ssid) or
+        //        (WiFi.SSID(i) == MonBWiFi_ssid) or
+        //        (WiFi.SSID(i) == Pool_ssid) or
+        //        (WiFi.SSID(i) == Garage_ssid) ) {
         DisplayOneMoreLine("." + String(i + 1) + ": " + String(WiFi.SSID(i)) + " (RSSI=" + String(theRSSI) + ")", TEXT_ALIGN_LEFT);
 
         if (theRSSI > bestRSSI) {
