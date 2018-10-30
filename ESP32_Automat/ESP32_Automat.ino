@@ -81,14 +81,14 @@
 //-------------------------------------------------
 const char *ConfigFilename = "/config.json";
 // Compute the required size: 6 x réseaux Wi-Fi max possible
-const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 6*JSON_OBJECT_SIZE(2) + 260;
+const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 6 * JSON_OBJECT_SIZE(2) + 260;
 // paramètres Wi-Fi - station
 const char* Local_Name    = "esp32_pool";
-const char* Pool_ssid     = "Pool";
-const char* Garage_ssid   = "Garage";
-const char* MonWiFi_ssid  = "Mon Wi-Fi";
-const char* MonBWiFi_ssid = "Mon BWi-Fi";
-const char* password = "louannetvanessasontmessourisadorees"; // pour tous les réseaux Wi-Fi
+//const char* Pool_ssid     = "Pool";
+//const char* Garage_ssid   = "Garage";
+//const char* MonWiFi_ssid  = "Mon Wi-Fi";
+//const char* MonBWiFi_ssid = "Mon BWi-Fi";
+//const char* password = "louannetvanessasontmessourisadorees"; // pour tous les réseaux Wi-Fi
 // paramètres Wi-Fi - Access Point
 const char* Automat_ssid  = "esp32_pool";
 const char* Automat_pwd = "Levsmsa2";
@@ -140,18 +140,49 @@ const int LEDfreq = 5000; // Hz
 const int LEDres  = 8; // bits => 256 levels
 
 //-------------------------------------------------
-// --- Déclaration des variables globales ---
+// --- Déclaration de types ---
 //-------------------------------------------------
 // configuration du logiciel
 struct WiFiNetwok_T {
-   String ssid;
-   String password;
+  String ssid;
+  String password;
 };
 struct Configuration_T {
-   bool FlipOLED = false;
-   int NbWiFiNetworks = -1;
-   WiFiNetwok_T* WiFiNetworks;
+  bool FlipOLED = false;
+  int NbWiFiNetworks = -1;
+  WiFiNetwok_T* WiFiNetworks;
 };
+// Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
+const int MANUAL     = 0;
+const int AUTOMATIC  = 1;
+const int UNDEF_MODE = 2;
+struct Automat_Mode_T {
+  int ModeState = MANUAL;
+  int prevModeState = MANUAL;
+  boolean ErrorMode = false;
+};
+// Automat 2 : Commande Volet roulant CLOSE_CMD_ACTIVATED || OPEN_CMD_ACTIVATED || UNDEF_CMD
+const int CLOSE_CMD_ACTIVATED = 0;
+const int OPEN_CMD_ACTIVATED  = 1;
+const int UNDEF_CMD = 2;
+struct Automat_Cmd_T {
+  int CommandState     = UNDEF_CMD;
+  int prevCommandState = UNDEF_CMD;
+  boolean ErrorCmd  = false;
+};
+// Etat de l'automate et de la piscine
+struct PoolState_T {
+  float AirTemp       = 0.0;
+  float WaterTemp     = 0.0;
+  boolean ErrorTemp = false;
+  boolean ErrorTemp0 = false;
+  boolean ErrorTemp1 = false;
+};
+
+//-------------------------------------------------
+// --- Déclaration des variables globales ---
+//-------------------------------------------------
+// configuration du logiciel
 Configuration_T Configuration;
 // client NTP
 WiFiUDP ntpUDP;
@@ -184,6 +215,7 @@ String the_IP_String = "unattributed";
 String the_AP_IP_String = "unattributed";
 String the_MAC_String = "";
 String the_SSID = "";            // a string to hold the SSID
+String the_password = "";        // a string to hold the password
 boolean stringComplete = false;  // whether the string is complete
 boolean restartFlag = false;     // whether to restart the module (http command
 // NTP variables
@@ -193,35 +225,12 @@ String DateNTP = "";
 int Ypos = 0;
 
 // Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
-const int MANUAL     = 0;
-const int AUTOMATIC  = 1;
-const int UNDEF_MODE = 2;
-struct Automat_Mode_T {
-  int ModeState = MANUAL;
-  int prevModeState = MANUAL;
-  boolean ErrorMode = false;
-};
 Automat_Mode_T Automat_Mode;
 
 // Automat 2 : Commande Volet roulant CLOSE_CMD_ACTIVATED || OPEN_CMD_ACTIVATED || UNDEF_CMD
-const int CLOSE_CMD_ACTIVATED = 0;
-const int OPEN_CMD_ACTIVATED  = 1;
-const int UNDEF_CMD           = 2;
-struct Automat_Cmd_T {
-  int CommandState     = UNDEF_CMD;
-  int prevCommandState = UNDEF_CMD;
-  boolean ErrorCmd  = false;
-};
 Automat_Cmd_T Automat_Cmd;
 
 // Etat de l'automate et de la piscine
-struct PoolState_T {
-  float AirTemp       = 0.0;
-  float WaterTemp     = 0.0;
-  boolean ErrorTemp = false;
-  boolean ErrorTemp0 = false;
-  boolean ErrorTemp1 = false;
-};
 PoolState_T PoolState;
 
 // Variables
@@ -453,7 +462,7 @@ void setup() {
   //-----------------------------------------------
   // CONNECTER AU WI-FI ET DEMARRER LE SERVEUR WEB
   //-----------------------------------------------
-  if (!ConnectToWiFi()) return;
+  if (!ConnectToWiFi(Configuration)) return;
   delay(1000);
 
   //-------------------------
@@ -548,7 +557,7 @@ void loop() {
       // SI LA CONNECTION EST PERDUE, TENTER DE LA RETABLIR
       //---------------------------------------------------
       Serial.println(F(" > WiFi not connected !"));
-      ConnectToWiFi();
+      ConnectToWiFi(Configuration);
 
     } else {
       //--------------------------------------------------
