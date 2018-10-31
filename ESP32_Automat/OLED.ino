@@ -1,8 +1,8 @@
 //------------------------------------------------
 // INITIALISATION OLED DISPLAY AND USER INTERFACE
 //------------------------------------------------
-void initializeOLED() {
-  Serial.println("OLED Init...");
+void initializeOLED(Configuration_T Config) {
+  Serial.println("Initializing OLED...");
 
   // The ESP is capable of rendering 60fps in 80Mhz mode
   // but that won't give you much time for anything else
@@ -35,7 +35,7 @@ void initializeOLED() {
 
   // Initialising the UI will init the display too.
   display.init();
-  //display.flipScreenVertically();
+  if (Config.flipOLED) display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
 
   // clear the display

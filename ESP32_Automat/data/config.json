@@ -1,0 +1,35 @@
+{
+	"flip OLED display" : true,
+	"temperature sampling period (s)" : 5,
+	"cover open/close duration (s)" : 145,
+	"wi-fi transmission period (s)" :  60,
+	"domoticz IP" : "192.168.1.23",
+	"domoticz port" : 8084,
+	"idx temperature eau" : 48,
+	"idx temperature air" : 49,
+	"idx automate mode"   : 50,
+	"idx position volet"  : 51,
+	"access point password" : "Levsmsa2",
+	"networks": [
+		{
+			"ssid" : "Mon BWi-Fi",
+			"password" : "louannetvanessasontmessourisadorees"
+		},
+		{
+			"ssid" : "Mon Wi-Fi",
+			"password" : "louannetvanessasontmessourisadorees"
+		},
+		{
+			"ssid" : "Pool",
+			"password" : "louannetvanessasontmessourisadorees"
+		},
+		{
+			"ssid" : "Garage",
+			"password" : "louannetvanessasontmessourisadorees"
+		},
+		{
+			"ssid" : "Garage",
+			"password" : "louannetvanessasontmessourisadorees"
+		}
+	]
+}

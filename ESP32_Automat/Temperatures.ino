@@ -1,8 +1,8 @@
 //--------------------------------------------------------------------
 // INITIALISATION DES CAPTEURS DE TEMPERATURE
 //--------------------------------------------------------------------
-void InitTemperatureSensors() {
-  Serial.println(F("Dallas Temperature IC Control Library initialization"));
+void InitTemperatureSensors(Configuration_T Config) {
+  Serial.println(F("Initializing Dallas Temperature IC Control Library..."));
   // Start up the library
   DallasSensors.begin();
 
@@ -30,7 +30,7 @@ void InitTemperatureSensors() {
     delay (2000);
   }
   else {
-    Serial.println(F("Unable to find address for Device 0"));
+    Serial.println(F("  Unable to find address for Device 0"));
     delay (2000);
     DisplayAlert("Unable to find address for Device 0");
     PoolState.ErrorTemp0 = true;
@@ -44,7 +44,7 @@ void InitTemperatureSensors() {
     delay (2000);
   }
   else {
-    Serial.println(F("Unable to find address for Device 1"));
+    Serial.println(F("  Unable to find address for Device 1"));
     delay (2000);
     DisplayAlert("Unable to find address for Device 1");
     PoolState.ErrorTemp1 = true;
@@ -80,7 +80,7 @@ void InitTemperatureSensors() {
   DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
 
   // Timer sampling temperatures
-  TimerTemp = timer.setInterval(intervalTemp, SampleTemperatures);
+  TimerTemp = timer.setInterval(Config.intervalTemp, SampleTemperatures);
   Serial.print(F("Initialisation timer échantillonage températures = "));
   Serial.println(millis());
   DisplayOneMoreLine("Init timer temp sampling", TEXT_ALIGN_LEFT);

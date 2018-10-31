@@ -1,12 +1,14 @@
 //-----------------------------------------------
 // . START A WIFI ACCESS POINT
 //-----------------------------------------------
-boolean StartWiFiSoftAP() {
+boolean StartWiFiSoftAP(Configuration_T Config) {
 #if defined VERBOSE
   Serial.println("Wi-Fi access point starting...");
 #endif
 
-  boolean result = WiFi.softAP(Automat_ssid, Automat_pwd); //WiFi.softAP(Automat_ssid, Automat_pwd);
+  char ap_password[Config.automat_pwd.length() + 1];
+  Config.automat_pwd.toCharArray(ap_password, Config.automat_pwd.length() + 1); // récupère le param dans le tableau de char
+  boolean result = WiFi.softAP(Automat_ssid, ap_password); //WiFi.softAP(Automat_ssid, automat_pwd);
   delay(500);
 
   // clear the display
@@ -113,20 +115,37 @@ boolean Start_WiFi_IDE_OTA() {
   ArduinoOTA.begin();
 #if defined VERBOSE
   Serial.println("IDE Update server initialized");
-  delay(aDelay);
 #endif
+}
+
+//-----------------------------------------------
+//   CHECK IF TH WIFI SSID IS ONE OF MINE
+//-----------------------------------------------
+boolean isMyWiFi(Configuration_T Configuration, String the_ssid) {
+  for (int j = 0; j < Configuration.nbWiFiNetworks - 1; ++j)
+    if (the_ssid == Configuration.WiFiNetworks[j].ssid) return true;
+  return false;
+}
+
+//-----------------------------------------------
+//   GET THE WIFI PASSWORD IF ITS ONE OF MINE
+//-----------------------------------------------
+String myWiFiPassword(Configuration_T Configuration, String the_ssid) {
+  for (int j = 0; j < Configuration.nbWiFiNetworks - 1; ++j)
+    if (the_ssid == Configuration.WiFiNetworks[j].ssid) return Configuration.WiFiNetworks[j].password;
+  return "";
 }
 
 //-----------------------------------------------
 // . CONNECT TO BEST AVAILABLE WIFI AP SIGNAL
 //-----------------------------------------------
-boolean ConnectToWiFi() {
+boolean ConnectToWiFi(Configuration_T Config) {
   const int MaxAttempts = 60;
   //--------------------
   // SCAN WI-FI
   //--------------------
 #if defined VERBOSE
-  Serial.println("Wi-Fi scan start");
+  Serial.println("Wi-Fi scan start...");
 #endif
 
   // WiFi.scanNetworks will return the number of networks found
@@ -168,11 +187,11 @@ boolean ConnectToWiFi() {
       theRSSI = WiFi.RSSI(i);
 
       // if (WiFi.SSID(i) == MonBWiFi_ssid) or (WiFi.SSID(i) == Garage_ssid)) {
-      if (
-        (WiFi.SSID(i) == MonWiFi_ssid) or
-        (WiFi.SSID(i) == MonBWiFi_ssid) or
-        (WiFi.SSID(i) == Pool_ssid) or
-        (WiFi.SSID(i) == Garage_ssid) ) {
+      if (isMyWiFi(Config, WiFi.SSID(i))) {
+        //        (WiFi.SSID(i) == MonWiFi_ssid) or
+        //        (WiFi.SSID(i) == MonBWiFi_ssid) or
+        //        (WiFi.SSID(i) == Pool_ssid) or
+        //        (WiFi.SSID(i) == Garage_ssid) ) {
         DisplayOneMoreLine("." + String(i + 1) + ": " + String(WiFi.SSID(i)) + " (RSSI=" + String(theRSSI) + ")", TEXT_ALIGN_LEFT);
 
         if (theRSSI > bestRSSI) {
@@ -191,17 +210,19 @@ boolean ConnectToWiFi() {
       Serial.print(theRSSI);
       Serial.println(")");
       //Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
-      delay(aDelay);
 #endif
     }
     char selected_ssid[WiFi.SSID(selectedWiFi).length() + 1]; // tableau de char de la taille du String param+1 (caractère de fin de ligne)
     WiFi.SSID(selectedWiFi).toCharArray(selected_ssid, WiFi.SSID(selectedWiFi).length() + 1); // récupère le param dans le tableau de char
     the_SSID = WiFi.SSID(selectedWiFi);
+    the_password = myWiFiPassword(Config, the_SSID);
 
 #if defined VERBOSE
     Serial.println("");
     Serial.print("Connecting to Wifi : ");
-    Serial.println(selected_ssid);
+    Serial.print(selected_ssid);
+    Serial.print(" with password : ");
+    Serial.println(the_password);
 #endif
     DisplayOneMoreLine("Connecting to : " + String(selected_ssid), TEXT_ALIGN_LEFT);
 
@@ -209,7 +230,9 @@ boolean ConnectToWiFi() {
     // CONNECTION WI-FI
     //--------------------
     //Serial.println(password);
-    WiFi.begin(selected_ssid, password);
+    char selected_password[the_password.length() + 1];
+    the_password.toCharArray(selected_password, the_password.length() + 1); // récupère le param dans le tableau de char
+    WiFi.begin(selected_ssid, selected_password);
     int connectionAttemps = 0;
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
