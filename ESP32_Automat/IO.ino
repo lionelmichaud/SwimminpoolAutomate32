@@ -3,7 +3,7 @@
 //-------------------------------------------------
 void BlinkRedAutoLED ()
 {
-  if (PoolState.ErrorTemp)
+  if (PoolState.ErrorTemp || PoolState.ErrorConfig)
     // Allumer la LED rouge en fixe
     digitalWrite(pAutoLED, HIGH);
 

@@ -1,8 +1,8 @@
 //
 // VERSIONS HISTORY
 //
-// VERSION 0.2.1
-//  Paramétrage inversion écran OLED #define Configuration.FlipOLED
+// VERSION 0.3.0
+//  Paramétrage inversion écran OLED #define Configuration.flipOLED
 //  Lecture des paramètres réseaux Wi-Fi en fichier SPIFF config JSON (SSID / Password)
 //
 // VERSION 0.2.0
@@ -16,7 +16,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "0.2.1"
+#define VERSION "0.3.0"
 
 #define DEBUG
 #define USB_OUTPUT
@@ -31,12 +31,6 @@
 
 // USB serial line bitrate
 #define USBSERIAL_BITRATE 115200
-
-// IDX of Domoticz devices
-#define idx_waterTemp 48
-#define idx_airTemp   49
-#define idx_automate  50
-#define idx_posVolet  51
 
 // Data wire is plugged into pin 7 on the Arduino
 #define ONE_WIRE_BUS 7
@@ -81,29 +75,17 @@
 //-------------------------------------------------
 const char *ConfigFilename = "/config.json";
 // Compute the required size: 6 x réseaux Wi-Fi max possible
-const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 6 * JSON_OBJECT_SIZE(2) + 260;
+const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5*JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(12) + 660;
 // paramètres Wi-Fi - station
 const char* Local_Name    = "esp32_pool";
-//const char* Pool_ssid     = "Pool";
-//const char* Garage_ssid   = "Garage";
-//const char* MonWiFi_ssid  = "Mon Wi-Fi";
-//const char* MonBWiFi_ssid = "Mon BWi-Fi";
-//const char* password = "louannetvanessasontmessourisadorees"; // pour tous les réseaux Wi-Fi
 // paramètres Wi-Fi - Access Point
 const char* Automat_ssid  = "esp32_pool";
-const char* Automat_pwd = "Levsmsa2";
-// Domoticz
-const char* host = "192.168.1.23"; // "192.168.1.23";
-const int   port = 8084;
 // timer variables
 //  Generally, you should use "unsigned long" for variables that hold time
 //  The value will quickly become too large for an int to store
-const unsigned long intervalUSB  =  60010; // interval at which to send data over USB (milliseconds)
-const unsigned long intervalWiFi =  30000; // interval at which to send data over WiFi (milliseconds)
 const unsigned long intervalLED  =    500; // interval at which to blink the Red LED (milliseconds)
-const unsigned long intervalTemp  =  5000; // interval at which to sample the temperatures (milliseconds)
+const unsigned long intervalUSB  =  60010; // interval at which to send data over USB (milliseconds)
 const unsigned long delaySamplingTemp = 750 / (1 << (12 - TEMPERATURE_PRECISION)); // delay to sample the temperatures (milliseconds)
-const unsigned long timeoutOpenClose  = 145000; // max duration of the opening or closure in mili-seconds (2minutes 25sec)
 const unsigned long periodColdTimer   =  60000; // période de la vérification la baisse de température (1 minute)
 // OLED constants
 const int fontsize = 10;
@@ -142,15 +124,31 @@ const int LEDres  = 8; // bits => 256 levels
 //-------------------------------------------------
 // --- Déclaration de types ---
 //-------------------------------------------------
+struct idx_T { // IDX of Domoticz devices
+  int idx_waterTemp = 48;
+  int idx_airTemp   = 49;
+  int idx_automate  = 50;
+  int idx_posVolet  = 51;
+};
 // configuration du logiciel
+struct domoticz_T {   // configuration Domoticz
+  String  host = "192.168.1.23"; // "192.168.1.23";
+  int     port = 8084;
+  idx_T   idxs;         // list of Domoticz idx
+};
 struct WiFiNetwok_T {
   String ssid;
   String password;
 };
 struct Configuration_T {
-  bool FlipOLED = false;
-  int NbWiFiNetworks = -1;
-  WiFiNetwok_T* WiFiNetworks;
+  bool            flipOLED         = false;
+  unsigned long   intervalTemp     =   5000; // interval at which to sample the temperatures (milliseconds)
+  unsigned long   timeoutOpenClose = 145000; // max duration of the opening or closure in mili-seconds (2minutes 25sec)
+  unsigned long   intervalWiFi     =  60000; // interval at which to send data over WiFi (milliseconds)
+  domoticz_T      domoticz;                  // Domoticz parameters
+  String          automat_pwd      = "Levsmsa2";
+  int             nbWiFiNetworks   = -1;
+  WiFiNetwok_T*   WiFiNetworks;              // list of Wi-Fi networks
 };
 // Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
 const int MANUAL     = 0;
@@ -174,9 +172,10 @@ struct Automat_Cmd_T {
 struct PoolState_T {
   float AirTemp       = 0.0;
   float WaterTemp     = 0.0;
-  boolean ErrorTemp = false;
-  boolean ErrorTemp0 = false;
-  boolean ErrorTemp1 = false;
+  boolean ErrorConfig = false;
+  boolean ErrorTemp   = false;
+  boolean ErrorTemp0  = false;
+  boolean ErrorTemp1  = false;
 };
 
 //-------------------------------------------------
@@ -267,9 +266,10 @@ Preferences preferences;
 //--------------------------------------------------
 // functions prototypes
 //--------------------------------------------------
-boolean StartWiFiSoftAP();
-boolean ConnectToWiFi(Configuration_T Configuration);
-void initializeOLED();
+boolean StartWiFiSoftAP(Configuration_T Config);
+boolean ConnectToWiFi(Configuration_T Config);
+void initializeOLED(Configuration_T Config);
+void InitTemperatureSensors(Configuration_T Config);
 void DisplayOneMoreLine(String line, OLEDDISPLAY_TEXT_ALIGNMENT textAlignment);
 void DisplayAlert(String AlertText);
 void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
@@ -296,14 +296,13 @@ void print1wireAddress(DeviceAddress deviceAddress);
 void print1wireTemperature(DeviceAddress deviceAddress);
 void DisplayWaterTemperatureOnLED (int WaterTemp);
 void SampleTemperatures();
-void InitTemperatureSensors();
 String String1wireAddress(DeviceAddress deviceAddress);
 boolean Start_WiFi_IDE_OTA();
 void SendDataOverUSB();
 void BlinkRedAutoLED();
 boolean SwitchRelayAutoManu (int State);
 boolean SwitchRelayOpenCloseCover (int State);
-void AutomatRun(Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState);
+void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState);
 void SendDataToDomoticz ();
 boolean ReadConfig(const char *filename, Configuration_T& Config);
 
@@ -329,6 +328,21 @@ void setup() {
   //-------------------------------
   Serial.begin(USBSERIAL_BITRATE);
   delay(10);
+
+  //------------------------------------------
+  // INITIALIZE SPIFF LIBRARY
+  //------------------------------------------
+  while (!SPIFFS.begin()) {
+    Serial.println(F("Failed SPIFF initialization"));
+    DisplayAlert("Failed to initialize SPIFF library !");
+  }
+
+  //------------------------------------------
+  // READ JSON CONFIGURATION FILE IN SPIFF
+  //------------------------------------------
+  // Should load default config if run for the first time
+  Serial.println(F("Loading configuration file in SPIFF..."));
+  PoolState.ErrorConfig = ReadConfig(ConfigFilename, Configuration);
 
   // reserve n bytes for the Strings: to avoid dynamic realocations
   inputString.reserve(200);
@@ -398,25 +412,10 @@ void setup() {
   //-------------------------------
   // INITIALIZE 1WIRE BUS and OLED
   //-------------------------------
-  initializeOLED();
+  initializeOLED(Configuration);
   DisplayOneMoreLine("ESP32 booting...", TEXT_ALIGN_CENTER);
   DisplayOneMoreLine("VERSION : " + String(VERSION), TEXT_ALIGN_CENTER);
   DisplayOneMoreLine("compiled " + String(__DATE__), TEXT_ALIGN_CENTER);
-
-  //------------------------------------------
-  // INITIALIZE SPIFF LIBRARY
-  //------------------------------------------
-  while (!SPIFFS.begin()) {
-    Serial.println(F("Failed SPIFF initialization"));
-    DisplayAlert("Failed to initialize SPIFF library !");
-  }
-
-  //------------------------------------------
-  // READ JSON CONFIGURATION FILE IN SPIFF
-  //------------------------------------------
-  // Should load default config if run for the first time
-  Serial.println(F("Loading configuration file in SPIFF..."));
-  if (!ReadConfig(ConfigFilename, Configuration)) return;
 
   Serial.setDebugOutput(false);
 
@@ -444,7 +443,7 @@ void setup() {
   // INITIALISATION DES CAPTEURS DE TEMPERATURE
   //--------------------------------------------------------------------
   delay (1000); // retarder l'init des thermistance
-  InitTemperatureSensors();
+  InitTemperatureSensors(Configuration);
 
   //--------------------------------------------------------------------------------------------------
   // Set WiFi to station mode + Access Point and disconnect from an AP if it was previously connected
@@ -456,7 +455,7 @@ void setup() {
   //-----------------------------------
   // INITIALIZE SOFT WI-FI ACCESS POINT
   //-----------------------------------
-  StartWiFiSoftAP();
+  StartWiFiSoftAP(Configuration);
   delay(1000);
 
   //-----------------------------------------------
@@ -481,7 +480,7 @@ void setup() {
   //-------------------------------------------
   Serial.print("Initialisation timer Wi-Fi = ");
   Serial.println(millis());
-  TimerWiFi = timer.setInterval(intervalWiFi, SendDataToDomoticz);
+  TimerWiFi = timer.setInterval(Configuration.intervalWiFi, SendDataToDomoticz);
   //timer.restartTimer(TimerWiFi);
 }
 
@@ -529,7 +528,7 @@ void loop() {
     //-------------------------------------------------------
     //  EXECUTE STATE MACHINES
     //-------------------------------------------------------
-    AutomatRun(Automat_Mode, Automat_Cmd, AutoSwitchState);
+    AutomatRun(Configuration, Automat_Mode, Automat_Cmd, AutoSwitchState);
 
     //-------------------------------------------------------
     // RECUPERER LES CARACTERES ARRIVANT SUR LA LIAISON SERIE

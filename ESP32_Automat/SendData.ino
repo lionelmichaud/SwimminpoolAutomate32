@@ -95,7 +95,7 @@ void SendDataToDomoticz ()
       // Transmettre Temperature Air à Domoticz
       //----------------------------------------
       if (!PoolState.ErrorTemp) {
-        sendSvalueDomoticz(String(PoolState.AirTemp), idx_airTemp);
+        sendSvalueDomoticz(String(PoolState.AirTemp), Configuration.domoticz.idxs.idx_airTemp);
 #if defined DEBUG
         Serial.print(F(">> TempAir = "));
         Serial.println(PoolState.AirTemp);
@@ -109,7 +109,7 @@ void SendDataToDomoticz ()
       // Transmettre Temperature Eau à Domoticz
       //----------------------------------------
       if (!PoolState.ErrorTemp) {
-        sendSvalueDomoticz(String(PoolState.WaterTemp), idx_waterTemp);
+        sendSvalueDomoticz(String(PoolState.WaterTemp), Configuration.domoticz.idxs.idx_waterTemp);
 #if defined DEBUG
         Serial.print(F(">> TempEau = "));
         Serial.println(PoolState.WaterTemp);
@@ -124,10 +124,10 @@ void SendDataToDomoticz ()
       //------------------------------------------------
       switch (Automat_Mode.ModeState) {
         case MANUAL:
-          sendSwitchCmdDomoticz("Off", idx_automate);
+          sendSwitchCmdDomoticz("Off", Configuration.domoticz.idxs.idx_automate);
           break;
         case AUTOMATIC:
-          sendSwitchCmdDomoticz("On", idx_automate);
+          sendSwitchCmdDomoticz("On", Configuration.domoticz.idxs.idx_automate);
           break;
         default:
           break;
@@ -147,10 +147,10 @@ void SendDataToDomoticz ()
       //------------------------------------------
       switch (Automat_Cmd.CommandState) {
         case CLOSE_CMD_ACTIVATED:
-          sendSwitchCmdDomoticz("On", idx_posVolet);
+          sendSwitchCmdDomoticz("On", Configuration.domoticz.idxs.idx_posVolet);
           break;
         case OPEN_CMD_ACTIVATED:
-          sendSwitchCmdDomoticz("Off", idx_posVolet);
+          sendSwitchCmdDomoticz("Off", Configuration.domoticz.idxs.idx_posVolet);
           break;
         default:
           break;

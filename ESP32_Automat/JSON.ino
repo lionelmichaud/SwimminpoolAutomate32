@@ -53,9 +53,8 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
   StaticJsonBuffer<JSONBufferConfigCapacity> jsonBuffer;
 
   // Parse the root object
-  // JsonObject &root = jsonBuffer.parseObject(file);
-  JsonArray& root = jsonBuffer.parseArray(configFile);
-  JsonArray& root_ = root;
+  JsonObject& root = jsonBuffer.parseObject(configFile);
+  JsonObject& root_ = root;
 
   // vérifier le bon décodage
   if (!root.success())
@@ -64,17 +63,45 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
     DisplayAlert("Failed to read config file");
     return false;
   }
-
-  // Walk the JsonArray efficiently
 #if defined VERBOSE
   root_.prettyPrintTo(Serial);
-  Serial.println(); Serial.println("Networks configurations: ");
 #endif
-  Config.NbWiFiNetworks = root_.size();
-  Config.WiFiNetworks = new WiFiNetwok_T[Config.NbWiFiNetworks];
+
+  // get OLED parameters
+  Config.flipOLED = root["flip OLED display"].as<bool>();
+
+  // get timers values
+  Config.intervalTemp     = 1000 * (root["temperature sampling period (s)"] | 5);
+  Config.timeoutOpenClose = 1000 * (root["cover open/close duration (s)"] | 145);
+  Config.intervalWiFi     = 1000 * (root["wi-fi transmission period (s)"] |  60);
+
+  // get Domoticz parameters
+  Config.domoticz.host = root["domoticz IP"] | "192.168.1.23";
+  Config.domoticz.port = root["domoticz port"] | 8084;
+  Config.domoticz.idxs.idx_waterTemp = root["idx temperature eau"] | 48;
+  Config.domoticz.idxs.idx_airTemp   = root["idx temperature air"] | 49;
+  Config.domoticz.idxs.idx_automate  = root["idx automate mode"]   | 50;
+  Config.domoticz.idxs.idx_posVolet  = root["idx position volet"]  | 51;
+
+  // get Wi-Fi access point parameters
+  Config.automat_pwd = root["access point password"] | "Levsmsa2";
+
+#if defined VERBOSE
+//  Serial.println(); Serial.print("flipOLED : "); Serial.println(Config.flipOLED);
+//  Serial.println("Temporisations : "); Serial.println(Config.intervalTemp); Serial.println(Config.timeoutOpenClose); Serial.println(Config.intervalWiFi);
+//  Serial.println("IDX : "); Serial.println(Config.domoticz.idxs.idx_waterTemp); Serial.println(Config.domoticz.idxs.idx_airTemp); Serial.println(Config.domoticz.idxs.idx_automate);
+//  Serial.println("AP password : "); Serial.println(Config.automat_pwd);
+  Serial.println("Networks configurations: ");
+#endif
+  // Extract the wi-fi networks array
+  JsonArray & NetArray = root_["networks"];
+
+  Config.nbWiFiNetworks = NetArray.size();
+  Config.WiFiNetworks = new WiFiNetwok_T[Config.nbWiFiNetworks];
   int i = 0;
 
-  for (JsonObject& elem : root_) {
+  // Walk the JsonArray efficiently
+  for (JsonObject& elem : NetArray) {
     JsonObject& network = elem;
     //    const char* ssid = elem["ssid"]; // "Mon BWi-Fi"
     //    const char* password = elem["password"]; // "louannetvanessasontmessourisadorees"

@@ -75,7 +75,7 @@ void MeasurePeriodOfCold()
 //------------------------------------------------------------------------------------------------
 // MANAGE STATE MACHINES
 //------------------------------------------------------------------------------------------------
-void AutomatRun(Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState) {
+void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState) {
   switch (theAutomatMode.ModeState) {
 
     case MANUAL:
@@ -157,7 +157,7 @@ void AutomatRun(Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, in
               // Commande de fermeture active
               //------------------------------
               currentMillis = millis();
-              if (currentMillis - prevMillis <= timeoutOpenClose) {
+              if (currentMillis - prevMillis <= Config.timeoutOpenClose) {
                 //----------------------------------------------------------------------
                 // La commande de fermeture auto est activée pendant une certaine durée
                 //----------------------------------------------------------------------
@@ -192,7 +192,7 @@ void AutomatRun(Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, in
               // Commande d'ouverture active
               //------------------------------
               currentMillis = millis();
-              if (currentMillis - prevMillis <= timeoutOpenClose) {
+              if (currentMillis - prevMillis <= Config.timeoutOpenClose) {
                 //----------------------------------------------------------------------
                 // La commande d'ouverture auto est activée pendant une certaine durée
                 //----------------------------------------------------------------------

@@ -1,12 +1,14 @@
 //-----------------------------------------------
 // . START A WIFI ACCESS POINT
 //-----------------------------------------------
-boolean StartWiFiSoftAP() {
+boolean StartWiFiSoftAP(Configuration_T Config) {
 #if defined VERBOSE
   Serial.println("Wi-Fi access point starting...");
 #endif
 
-  boolean result = WiFi.softAP(Automat_ssid, Automat_pwd); //WiFi.softAP(Automat_ssid, Automat_pwd);
+  char ap_password[Config.automat_pwd.length() + 1];
+  Config.automat_pwd.toCharArray(ap_password, Config.automat_pwd.length() + 1); // récupère le param dans le tableau de char
+  boolean result = WiFi.softAP(Automat_ssid, ap_password); //WiFi.softAP(Automat_ssid, automat_pwd);
   delay(500);
 
   // clear the display
@@ -120,7 +122,7 @@ boolean Start_WiFi_IDE_OTA() {
 //   CHECK IF TH WIFI SSID IS ONE OF MINE
 //-----------------------------------------------
 boolean isMyWiFi(Configuration_T Configuration, String the_ssid) {
-  for (int j = 0; j < Configuration.NbWiFiNetworks - 1; ++j)
+  for (int j = 0; j < Configuration.nbWiFiNetworks - 1; ++j)
     if (the_ssid == Configuration.WiFiNetworks[j].ssid) return true;
   return false;
 }
@@ -129,7 +131,7 @@ boolean isMyWiFi(Configuration_T Configuration, String the_ssid) {
 //   GET THE WIFI PASSWORD IF ITS ONE OF MINE
 //-----------------------------------------------
 String myWiFiPassword(Configuration_T Configuration, String the_ssid) {
-  for (int j = 0; j < Configuration.NbWiFiNetworks - 1; ++j)
+  for (int j = 0; j < Configuration.nbWiFiNetworks - 1; ++j)
     if (the_ssid == Configuration.WiFiNetworks[j].ssid) return Configuration.WiFiNetworks[j].password;
   return "";
 }
@@ -137,7 +139,7 @@ String myWiFiPassword(Configuration_T Configuration, String the_ssid) {
 //-----------------------------------------------
 // . CONNECT TO BEST AVAILABLE WIFI AP SIGNAL
 //-----------------------------------------------
-boolean ConnectToWiFi(Configuration_T Configuration) {
+boolean ConnectToWiFi(Configuration_T Config) {
   const int MaxAttempts = 60;
   //--------------------
   // SCAN WI-FI
@@ -185,7 +187,7 @@ boolean ConnectToWiFi(Configuration_T Configuration) {
       theRSSI = WiFi.RSSI(i);
 
       // if (WiFi.SSID(i) == MonBWiFi_ssid) or (WiFi.SSID(i) == Garage_ssid)) {
-      if (isMyWiFi(Configuration, WiFi.SSID(i))) {
+      if (isMyWiFi(Config, WiFi.SSID(i))) {
         //        (WiFi.SSID(i) == MonWiFi_ssid) or
         //        (WiFi.SSID(i) == MonBWiFi_ssid) or
         //        (WiFi.SSID(i) == Pool_ssid) or
@@ -213,7 +215,7 @@ boolean ConnectToWiFi(Configuration_T Configuration) {
     char selected_ssid[WiFi.SSID(selectedWiFi).length() + 1]; // tableau de char de la taille du String param+1 (caractère de fin de ligne)
     WiFi.SSID(selectedWiFi).toCharArray(selected_ssid, WiFi.SSID(selectedWiFi).length() + 1); // récupère le param dans le tableau de char
     the_SSID = WiFi.SSID(selectedWiFi);
-    the_password = myWiFiPassword(Configuration, the_SSID);
+    the_password = myWiFiPassword(Config, the_SSID);
 
 #if defined VERBOSE
     Serial.println("");
