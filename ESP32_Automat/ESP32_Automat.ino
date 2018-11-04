@@ -25,7 +25,7 @@
 #define PREFERENCES_OUTPUT
 //#define PREFERENCES_RESET
 #define CLOSURE_TEMPO
-#define NTP_OFFSET 7200 // 3600 = 1h en hiver ; 7200 = 2h en été
+#define NTP_OFFSET 3600 // 3600 = 1h en hiver ; 7200 = 2h en été
 #define NTP_PERIOD 30000 // milisecondes
 #define TEMPOFFSETINCREMENT 0.25
 
@@ -33,7 +33,6 @@
 #define USBSERIAL_BITRATE 115200
 
 // Data wire is plugged into pin 7 on the Arduino
-#define ONE_WIRE_BUS 7
 #define ONE_WIRE_WATER_TEMP_DEVICE 0 // swap with device 1 if temperature does not correspond
 #define ONE_WIRE_AIR_TEMP_DEVICE 1   // swap with device 0 if temperature does not correspond
 #define TEMPERATURE_PRECISION 11
@@ -75,7 +74,7 @@
 //-------------------------------------------------
 const char *ConfigFilename = "/config.json";
 // Compute the required size: 6 x réseaux Wi-Fi max possible
-const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5*JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(12) + 660;
+const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(12) + 660;
 // paramètres Wi-Fi - station
 const char* Local_Name    = "esp32_pool";
 // paramètres Wi-Fi - Access Point
@@ -170,8 +169,8 @@ struct Automat_Cmd_T {
 };
 // Etat de l'automate et de la piscine
 struct PoolState_T {
-  float AirTemp       = 0.0;
-  float WaterTemp     = 0.0;
+  float AirTemp       = -256.0;
+  float WaterTemp     = -256.0;
   boolean ErrorConfig = false;
   boolean ErrorTemp   = false;
   boolean ErrorTemp0  = false;
@@ -239,8 +238,8 @@ int AutoSwitchState = MANUAL;
 int TempLEDred =   0;
 int TempLEDgreen = 0;
 int TempLEDblue =  0;
-int Relay1 = HIGH; // Relais au repos => La clé manuelle à la main
-int Relay2 = HIGH; // Relais au repos => Fermé
+int Relay1 = HIGH; // Relais au repos => La clé manuelle à la main : automatisme débrayé
+int Relay2 = HIGH; // Relais au repos => Volet Fermé
 int PeriodOfLowAirTemp = 0; // compte le nombre de périodes 'periodColdTimer' pendant lesquelles la temp à été vue basse
 float Temp =       0.0;
 
@@ -251,7 +250,7 @@ String UnexpectedString = "";
 
 // Setup a oneWire instance to communicate with any OneWire devices
 // (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_BUS);
+OneWire oneWire(pTempDS18B20);
 
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature DallasSensors(&oneWire);
@@ -283,8 +282,10 @@ void MeasurePeriodOfCold();
 void parseString(String receivedString);
 void SetWaterTempOffset(float Offset);
 void SetAirTempOffset(float Offset);
+void SetSummerHour(bool SummerHour);
 void SetSeuil(float Seuil);
 void SetHysteresis(float Hysteresis);
+bool SummerHour();
 int NbPeriodCold();
 float Seuil();
 float Hysteresis();
@@ -376,7 +377,7 @@ void setup() {
   //-------------------------------
   Serial.println(F("Initializing I/O..."));
   // inputs
-  //  pinMode(pIntTempR, INPUT);
+  //    pinMode(pIntTempR, INPUT);
   pinMode(pAutoSwitch, INPUT_PULLUP);
   // outputs
   pinMode(pAutoLED, OUTPUT);
@@ -385,26 +386,22 @@ void setup() {
   pinMode(pTempLEDblue, OUTPUT);
   pinMode(pRelay1, OUTPUT);
   pinMode(pRelay2, OUTPUT);
-
-  // open relays
+  //    open relays
   digitalWrite(pRelay1, Relay1);
   digitalWrite(pRelay2, Relay2);
 
-  // switch off Auto LED
+  //    switch off Auto LED
   digitalWrite(pAutoLED, AutoLED);
 
-  // configure LED PWM functionalitites
+  //    configure LED PWM functionalitites
   ledcSetup(cTempLEDred,   LEDfreq, LEDres);
   ledcSetup(cTempLEDgreen, LEDfreq, LEDres);
   ledcSetup(cTempLEDblue,  LEDfreq, LEDres);
-  // attach the channel to the GPIO to be controlled
+  //    attach the channel to the GPIO to be controlled
   ledcAttachPin(pTempLEDred,   cTempLEDred);
   ledcAttachPin(pTempLEDgreen, cTempLEDgreen);
   ledcAttachPin(pTempLEDblue,  cTempLEDblue);
-  // switch off Water Temperature LED color between red (cold) and green (hot):
-  //  analogWrite(pTempLEDred,   0);
-  //  analogWrite(pTempLEDgreen, 0);
-  //  analogWrite(pTempLEDblue,  0);
+  //    switch off Water Temperature LED color between red (cold) and green (hot):
   ledcWrite(cTempLEDred, 0);
   ledcWrite(cTempLEDgreen, 0);
   ledcWrite(cTempLEDblue, 0);
@@ -442,7 +439,6 @@ void setup() {
   //--------------------------------------------------------------------
   // INITIALISATION DES CAPTEURS DE TEMPERATURE
   //--------------------------------------------------------------------
-  delay (1000); // retarder l'init des thermistance
   InitTemperatureSensors(Configuration);
 
   //--------------------------------------------------------------------------------------------------
@@ -468,6 +464,9 @@ void setup() {
   // DEMARRER LE CLIENT NTP
   //-------------------------
   timeClient.begin();
+  // décalage horrairer et reculer d'une heure en heure d'hiver
+  if (SummerHour()) timeClient.setTimeOffset(7200);
+  else timeClient.setTimeOffset(3600);
   //  int TimerNTP = timer.setInterval(interval_NTP_to_Arduino, Print_NTP_Date_Time);
   //  timer.restartTimer(TimerNTP);
   //#if defined VERBOSE

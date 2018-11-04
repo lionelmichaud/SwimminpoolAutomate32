@@ -2,10 +2,12 @@
 // INITIALISATION DES CAPTEURS DE TEMPERATURE
 //--------------------------------------------------------------------
 void InitTemperatureSensors(Configuration_T Config) {
+  delay (2000); // retarder l'init des thermistance
   Serial.println(F("Initializing Dallas Temperature IC Control Library..."));
   // Start up the library
   DallasSensors.begin();
 
+  delay (2000); // retarder l'init des thermistance
   // locate devices on the 1-Wire bus
   Serial.print(F("Locating 1-Wire devices..."));
   Serial.print("Found ");
@@ -15,7 +17,7 @@ void InitTemperatureSensors(Configuration_T Config) {
   DallasDeviceCount = DallasSensors.getDS18Count();
   Serial.print(DallasDeviceCount, DEC);
   Serial.println(" Dallas devices.");
-  PoolState.ErrorTemp = (DallasDeviceCount != 2);
+  //  PoolState.ErrorTemp = (DallasDeviceCount != 2);
 
   // clear the display
   display.clear();
@@ -61,6 +63,7 @@ void InitTemperatureSensors(Configuration_T Config) {
   //  DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
   DallasSensors.setResolution(TEMPERATURE_PRECISION);
 
+  delay (2000); // retarder l'init des thermistance
   if (!PoolState.ErrorTemp0) {
     Serial.print("Device 0 Resolution : ");
     Serial.println(DallasSensors.getResolution(Device0_Thermometer), DEC);
@@ -72,13 +75,14 @@ void InitTemperatureSensors(Configuration_T Config) {
 
   // Get the initial temperatures
   DallasSensors.requestTemperatures(); // Send the command to get temperature readings
-  PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
-  Serial.print("Air Temperature is : "); Serial.println(PoolState.AirTemp);
-  DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
-  PoolState.WaterTemp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
-  Serial.print("Eau Temperature is : "); Serial.println(PoolState.WaterTemp);
-  DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
-
+  if (!PoolState.ErrorTemp) {
+    PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
+    Serial.print("Air Temperature is : "); Serial.println(PoolState.AirTemp);
+    DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
+    PoolState.WaterTemp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
+    Serial.print("Eau Temperature is : "); Serial.println(PoolState.WaterTemp);
+    DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
+  }
   // Timer sampling temperatures
   TimerTemp = timer.setInterval(Config.intervalTemp, SampleTemperatures);
   Serial.print(F("Initialisation timer échantillonage températures = "));
@@ -132,7 +136,7 @@ void print1wireTemperature(DeviceAddress deviceAddress)
 void DisplayWaterTemperatureOnLED (int WaterTemp)
 {
   int const Tmin = 20 * 10;
-  int const Tmax = 25 * 10;
+  int const Tmax = 27 * 10;
   int Wtemp = WaterTemp * 10;
 
   // map the temperature to the range of the analog out:
