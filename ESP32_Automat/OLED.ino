@@ -80,9 +80,9 @@ void drawPageSoftwareInfo(OLEDDisplay * display, OLEDDisplayUiState * state, int
 
   display->drawString(0 + x, 10 + y, "SW: " + String(SOFTWARE) + " - " + String(VERSION));
   display->drawString(0 + x, 20 + y, "Compiled :    " + String(__DATE__));
-  display->drawString(0 + x, 30 + y, "Dallas devices : " + String(DallasDeviceCount));
-  if (!PoolState.ErrorTemp0) display->drawString( 0 + x, 40 + y, "  D0: " + String1wireAddress(Device0_Thermometer));
-  if (!PoolState.ErrorTemp1) display->drawString(64 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
+  //display->drawString(0 + x, 30 + y, "Dallas devices : " + String(DallasDeviceCount));
+  if (!PoolState.ErrorTemp0) display->drawString(0 + x, 30 + y, "D0: " + String1wireAddress(Device0_Thermometer));
+  if (!PoolState.ErrorTemp1) display->drawString(0 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
 }
 
 void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {

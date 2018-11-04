@@ -87,12 +87,14 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
           //-------------------------------------
           // Switch commuté en position AUTOMATIC
           //-------------------------------------
-          // commutation en mode Automatic
-          theAutomatMode.ModeState = AUTOMATIC;
+          if (!PoolState.ErrorTemp) {
+            // commutation en mode Automatic seulement si les mesures de températures sont valides
+            theAutomatMode.ModeState = AUTOMATIC;
 
-          // Allumer la LED auto
-          AutoLED = HIGH;
-          digitalWrite(pAutoLED, AutoLED);
+            // Allumer la LED auto
+            AutoLED = HIGH;
+            digitalWrite(pAutoLED, AutoLED);
+          }
           break;
 
         case MANUAL :

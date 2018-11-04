@@ -132,7 +132,7 @@ String getPageDeviceInfo() {
   page +=     "<h3 class='text-muted'>";
   page +=       "<em>Etat de la piscine</em>";
   page +=     "</h3>";
-  page +=     "<a class='nav-link btn btn-info' href='#'>Heure <span class='badge badge-light'>" + TimeNTP + "</span></a><br>";
+  page +=     "<a class='nav-link btn btn-info' href='#'>Temps NTP <span class='badge badge-light'>" + DateNTP + " / " + TimeNTP + "</span></a><br>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(PoolState.AirTemp) + " deg" + "</span></a>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(PoolState.WaterTemp) + " deg" + "</span></a><br>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + CurrentModeString() + "</span></a>";
@@ -158,6 +158,8 @@ String getPageCommands() {
   page +=       "<a href=/update_IDE target=blank class='btn btn-danger'  >Mettre a jour le logiciel IDE OTA</a><br>";
   page +=       "<a href=/update_WEB target=blank class='btn btn-danger'  >Mettre a jour le logiciel WEB OTA</a><br>";
   page +=       "<a href=/restart    target=blank class='btn btn-danger'  >Red&eacute;marrer ESP</a><br>";
+  page +=       "<a href=/heure_ete  target=blank class='btn btn-warning' >Heure &eacute;t&eacute;</a><br>";
+  page +=       "<a href=/heure_hiver target=blank class='btn btn-warning' >Heure hiver</a><br>";
   page +=       "<a href=/reset_offs target=blank class='btn btn-warning' >Reset temp offsets sur Arduino</a><br>";
   page +=       "<a href=/info       target=blank class='btn btn-success' >Obtenir ces informations au format text</a><br>";
 
@@ -241,7 +243,7 @@ void handleTextInfo() {
   message += "\nESP Flash mode:  " + String((ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN"));
   //  message += "\nESP Chip ID:     " + String(chipId);
   //  message += "\nESP Chip ID Flash size: " + getFlashChipSizeByChipId(chipId);
-  message += "\n\nTime NTP:" + TimeNTP;
+  message += "\n\nTime NTP:" + DateNTP + " / " + TimeNTP;
   message += "\n\nAccess point:";
   message += "\n   IP:   " + the_AP_IP_String;
   message += "\n\nConnecte au reseau :";
@@ -251,16 +253,30 @@ void handleTextInfo() {
   message += "\n   IP:   " + the_IP_String;
   message += "\n   MAC:  " + the_MAC_String;
   message += "\n\nStatus:";
+  if (PoolState.ErrorTemp0) {
+    message += "\n   Capteur temperature 0 => ERREUR adress=" + String1wireAddress(Device0_Thermometer);
+  }
+  if (PoolState.ErrorTemp1) {
+    message += "\n   Capteur temperature 1 => ERREUR adress=" + String1wireAddress(Device1_Thermometer);
+  }
   message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg";
   message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg";
   message += "\n   Mode automatique  = " + CurrentModeString();
+  if (Automat_Mode.ErrorMode) {
+    message += " => ERREUR";
+  }
   message += "\n   Position du Volet = " + CurrentCoverPositionString();
+  if (Automat_Cmd.ErrorCmd) {
+    message += " => ERREUR";
+  }
   message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   message += "\n\nCommands: ";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";
   message += "\n   http://" + String(Local_Name) + ".local/update_WEB : mettre a jour le logiciel WEB OTA";
-  message += "\n   http://" + String(Local_Name) + ".local/restart    : redemarrer ESP";
+  message += "\n   http://" + String(Local_Name) + ".local/restart    : red&eacute;marrer ESP";
   message += "\n   http://" + String(Local_Name) + ".local/reset_offs : reset temp offsets";
+  message += "\n   http://" + String(Local_Name) + ".local/heure_ete  : heure &eacute;t&eacute;";
+  message += "\n   http://" + String(Local_Name) + ".local/heure_hiver: heure hiver";
   message += "\n   http://" + String(Local_Name) + ".local/eau_plus   : offeset eau +0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/eau_moins  : offeset eau -0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/air_plus   : offeset air +0.25 degre";
@@ -285,6 +301,22 @@ void handleIDE_OTA() {
   Serial.println(message);
   delay(1000);
   Start_WiFi_IDE_OTA();
+}
+
+//--------------------------------------------------------------------
+void handleSummerHour() {
+  String message = "Passage à l'heure d'été...";
+  server.send(200, "text/plain", message);
+  Serial.println(message);
+  SetSummerHour(true);
+}
+
+//--------------------------------------------------------------------
+void handleWinterHour() {
+  String message = "Passage à l'heure d'hiver...";
+  server.send(200, "text/plain", message);
+  Serial.println(message);
+  SetSummerHour(false);
 }
 
 //--------------------------------------------------------------------
@@ -398,6 +430,12 @@ void StartWEBserver () {
       }
     }
   });
+
+  // Page WEB de passage à l'heure d'été
+  server.on("/heure_ete", handleSummerHour);
+
+  // Page WEB de passage à l'heure d'hiver
+  server.on("/heure_hiver", handleWinterHour);
 
   // Page WEB de reset Offsets températures
   server.on("/reset_offs", handleResetOffsetTemp);

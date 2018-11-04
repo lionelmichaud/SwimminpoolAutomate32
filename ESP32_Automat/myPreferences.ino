@@ -10,6 +10,7 @@
 //  float Hysteresis    = 2.0; // Fermeture volet si (AirTemp < WaterTemp + Seuil - Hysteresis)
 //  float OffsetAir     = 0.0;
 //  float OffsetEau     = 0.0;
+//  bool Summer         = 1;   // Heure d'été
 
 //------------------------------------------------
 // INCREMENT WATER TEMP OFFSET IN EEPROM MEMORY
@@ -50,6 +51,11 @@ void SetAirTempOffset(float OffsetIncrement) {
 }
 
 //------------------------------------------------
+void SetSummerHour(bool SummerHour) {
+  preferences.putBool("Heure ete", SummerHour);
+}
+
+//------------------------------------------------
 void SetSeuil(float Seuil) {
   preferences.putFloat("Seuil", Seuil);
 }
@@ -62,6 +68,16 @@ void SetHysteresis(float Hysteresis) {
 //------------------------------------------------
 int NbPeriodCold() {
   return preferences.getInt("NbPeriodCold", 15);
+}
+
+//------------------------------------------------
+bool SummerHour() {
+  return preferences.getBool("Heure ete", 1);
+}
+
+//------------------------------------------------
+int OffsetHour() {
+  return (preferences.getBool("Heure ete", 1)? 0: -1);
 }
 
 //------------------------------------------------
@@ -127,6 +143,7 @@ void ResetPreferences() {
 void DumpPreferences() {
   Serial.println();
   Serial.println("Préférences");
+  Serial.print(F("  - Heure d'été              = ")); Serial.println(SummerHour());
   Serial.print(F("  - Number of period of cold = ")); Serial.println(NbPeriodCold());
   Serial.print(F("  - Seuil de déclenchement   = ")); Serial.print(Seuil()); Serial.println(" °C");
   Serial.print(F("  - Hysteresis de déclench.  = ")); Serial.print(Hysteresis()); Serial.println(" °C");
