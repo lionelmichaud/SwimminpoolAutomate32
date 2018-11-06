@@ -3,41 +3,80 @@ void ResetOffsetPreferences();
 //-------------------------------------------------------
 // WEB PAGE FOR SLECTING THE BIN FILE TO UPLOAD TO ESP32
 //-------------------------------------------------------
-const char* serverIndex = "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
-                          "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
-                          "<input type='file' name='update'>"
-                          "<input type='submit' value='Update'>"
-                          "</form>"
-                          "<div id='prg'>progress: 0%</div>"
-                          "<script>"
-                          "$('form').submit(function(e){"
-                          "e.preventDefault();"
-                          "var form = $('#upload_form')[0];"
-                          "var data = new FormData(form);"
-                          " $.ajax({"
-                          "url: '/update',"
-                          "type: 'POST',"
-                          "data: data,"
-                          "contentType: false,"
-                          "processData:false,"
-                          "xhr: function() {"
-                          "var xhr = new window.XMLHttpRequest();"
-                          "xhr.upload.addEventListener('progress', function(evt) {"
-                          "if (evt.lengthComputable) {"
-                          "var per = evt.loaded / evt.total;"
-                          "$('#prg').html('progress: ' + Math.round(per*100) + '%');"
-                          "}"
-                          "}, false);"
-                          "return xhr;"
-                          "},"
-                          "success:function(d, s) {"
-                          "console.log('success!')"
-                          "},"
-                          "error: function (a, b, c) {"
-                          "}"
-                          "});"
-                          "});"
-                          "</script>";
+//const char* serverIndex = "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
+//                          "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
+//                          "<input type='file' name='update'>"
+//                          "<input type='submit' value='Update'>"
+//                          "</form>"
+//                          "<div id='prg'>progress: 0%</div>"
+//                          "<script>"
+//                          "$('form').submit(function(e){"
+//                          "e.preventDefault();"
+//                          "var form = $('#upload_form')[0];"
+//                          "var data = new FormData(form);"
+//                          " $.ajax({"
+//                          "url: '/update',"
+//                          "type: 'POST',"
+//                          "data: data,"
+//                          "contentType: false,"
+//                          "processData:false,"
+//                          "xhr: function() {"
+//                          "var xhr = new window.XMLHttpRequest();"
+//                          "xhr.upload.addEventListener('progress', function(evt) {"
+//                          "if (evt.lengthComputable) {"
+//                          "var per = evt.loaded / evt.total;"
+//                          "$('#prg').html('progress: ' + Math.round(per*100) + '%');"
+//                          "}"
+//                          "}, false);"
+//                          "return xhr;"
+//                          "},"
+//                          "success:function(d, s) {"
+//                          "console.log('success!')"
+//                          "},"
+//                          "error: function (a, b, c) {"
+//                          "}"
+//                          "});"
+//                          "});"
+//                          "</script>";
+
+static String getContentType(const String& path) {
+  if (path.endsWith(".html")) return "text/html";
+  else if (path.endsWith(".htm")) return "text/html";
+  else if (path.endsWith(".css")) return "text/css";
+  else if (path.endsWith(".txt")) return "text/plain";
+  else if (path.endsWith(".js")) return "application/javascript";
+  else if (path.endsWith(".png")) return "image/png";
+  else if (path.endsWith(".gif")) return "image/gif";
+  else if (path.endsWith(".jpg")) return "image/jpeg";
+  else if (path.endsWith(".ico")) return "image/x-icon";
+  else if (path.endsWith(".svg")) return "image/svg+xml";
+  else if (path.endsWith(".ttf")) return "application/x-font-ttf";
+  else if (path.endsWith(".otf")) return "application/x-font-opentype";
+  else if (path.endsWith(".woff")) return "application/font-woff";
+  else if (path.endsWith(".woff2")) return "application/font-woff2";
+  else if (path.endsWith(".eot")) return "application/vnd.ms-fontobject";
+  else if (path.endsWith(".sfnt")) return "application/font-sfnt";
+  else if (path.endsWith(".xml")) return "text/xml";
+  else if (path.endsWith(".pdf")) return "application/pdf";
+  else if (path.endsWith(".zip")) return "application/zip";
+  else if (path.endsWith(".gz")) return "application/x-gzip";
+  else if (path.endsWith(".appcache")) return "text/cache-manifest";
+  return "application/octet-stream";
+}
+
+bool handleFileRead(String path) { // send the SPIFFS file to the client (if it exists)
+  Serial.println("handleFileRead: " + path);
+  if (path.endsWith("/")) path += "index.html";         // If a folder is requested, send the index file
+  String contentType = getContentType(path);            // Get the MIME type
+  if (SPIFFS.exists(path)) {                            // If the file exists
+    File file = SPIFFS.open(path, "r");                 // Open it
+    size_t sent = server.streamFile(file, contentType); // And send it to the client
+    file.close();                                       // Then close the file again
+    return true;
+  }
+  Serial.println("\tFile Not Found");
+  return false;                                         // If the file doesn't exist, return false
+}
 
 String getPageSoftwareInfo() {
   FlashMode_t ideMode = ESP.getFlashChipMode();
@@ -397,10 +436,11 @@ void StartWEBserver () {
   server.on("/update_IDE", handleIDE_OTA);
 
   // Page WEB de Update software WEB OTA
-  server.on("/update_WEB", HTTP_GET, []() {
-    server.sendHeader("Connection", "close");
-    server.send(200, "text/html", serverIndex);
-  });
+  //  server.on("/update_WEB", HTTP_GET, []() {
+  //    server.sendHeader("Connection", "close");
+  //    server.send(200, "text/html", serverIndex);
+  //  });
+  server.serveStatic("/update_WEB", SPIFFS, "/serverIndex.html");
 
   // Page WEB de Update software WEB OTA
   /*handling uploading firmware file */

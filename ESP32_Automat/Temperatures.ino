@@ -28,7 +28,7 @@ void InitTemperatureSensors(Configuration_T Config) {
     Serial.print ("Device 0 address: ");
     print1wireAddress(Device0_Thermometer);
     Serial.println ();
-    Display1wireAddress("Device 0 address: ", Device0_Thermometer);
+    Display1wireAddress("Device 0: ", Device0_Thermometer);
     delay (2000);
   }
   else {
@@ -42,7 +42,7 @@ void InitTemperatureSensors(Configuration_T Config) {
     Serial.print ("Device 1 address : ");
     print1wireAddress(Device1_Thermometer);
     Serial.println ();
-    Display1wireAddress("Device 1 address : ", Device1_Thermometer);
+    Display1wireAddress("Device 1: ", Device1_Thermometer);
     delay (2000);
   }
   else {
@@ -133,10 +133,10 @@ void print1wireTemperature(DeviceAddress deviceAddress)
 //*****************************************
 //  display water temperature with RGB LED
 //*****************************************
-void DisplayWaterTemperatureOnLED (int WaterTemp)
+void DisplayWaterTemperatureOnLED (int WaterTemp, Configuration_T Config)
 {
-  int const Tmin = 20 * 10;
-  int const Tmax = 27 * 10;
+  int Tmin  = Config.RedLEDtemp   * 10;
+  int Tmax  = Config.GreenLEDtemp * 10;
   int Wtemp = WaterTemp * 10;
 
   // map the temperature to the range of the analog out:

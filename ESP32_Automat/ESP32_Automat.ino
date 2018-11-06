@@ -74,7 +74,7 @@
 //-------------------------------------------------
 const char *ConfigFilename = "/config.json";
 // Compute the required size: 6 x réseaux Wi-Fi max possible
-const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(12) + 660;
+const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5*JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(14) + 710;
 // paramètres Wi-Fi - station
 const char* Local_Name    = "esp32_pool";
 // paramètres Wi-Fi - Access Point
@@ -140,6 +140,8 @@ struct WiFiNetwok_T {
   String password;
 };
 struct Configuration_T {
+  int             RedLEDtemp       = 20;
+  int             GreenLEDtemp     = 27;
   bool            flipOLED         = false;
   unsigned long   intervalTemp     =   5000; // interval at which to sample the temperatures (milliseconds)
   unsigned long   timeoutOpenClose = 145000; // max duration of the opening or closure in mili-seconds (2minutes 25sec)
@@ -295,7 +297,7 @@ void ResetPreferences();
 void DumpPreferences();
 void print1wireAddress(DeviceAddress deviceAddress);
 void print1wireTemperature(DeviceAddress deviceAddress);
-void DisplayWaterTemperatureOnLED (int WaterTemp);
+void DisplayWaterTemperatureOnLED (int WaterTemp, Configuration_T Config);
 void SampleTemperatures();
 String String1wireAddress(DeviceAddress deviceAddress);
 boolean Start_WiFi_IDE_OTA();
@@ -522,7 +524,7 @@ void loop() {
     // SET OUTPUTS
     //-------------------------------------------------------
     // set the Water temp LED color as a function of Water temperature
-    DisplayWaterTemperatureOnLED (PoolState.WaterTemp);
+    DisplayWaterTemperatureOnLED (PoolState.WaterTemp, Configuration);
 
     //-------------------------------------------------------
     //  EXECUTE STATE MACHINES
