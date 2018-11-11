@@ -64,19 +64,19 @@ static String getContentType(const String& path) {
   return "application/octet-stream";
 }
 
-bool handleFileRead(String path) { // send the SPIFFS file to the client (if it exists)
-  Serial.println("handleFileRead: " + path);
-  if (path.endsWith("/")) path += "index.html";         // If a folder is requested, send the index file
-  String contentType = getContentType(path);            // Get the MIME type
-  if (SPIFFS.exists(path)) {                            // If the file exists
-    File file = SPIFFS.open(path, "r");                 // Open it
-    size_t sent = server.streamFile(file, contentType); // And send it to the client
-    file.close();                                       // Then close the file again
-    return true;
-  }
-  Serial.println("\tFile Not Found");
-  return false;                                         // If the file doesn't exist, return false
-}
+//bool handleFileRead(String path) { // send the SPIFFS file to the client (if it exists)
+//  Serial.println("handleFileRead: " + path);
+//  if (path.endsWith("/")) path += "index.html";         // If a folder is requested, send the index file
+//  String contentType = getContentType(path);            // Get the MIME type
+//  if (SPIFFS.exists(path)) {                            // If the file exists
+//    File file = SPIFFS.open(path, "r");                 // Open it
+//    size_t sent = server.streamFile(file, contentType); // And send it to the client
+//    file.close();                                       // Then close the file again
+//    return true;
+//  }
+//  Serial.println("\tFile Not Found");
+//  return false;                                         // If the file doesn't exist, return false
+//}
 
 String getPageSoftwareInfo() {
   FlashMode_t ideMode = ESP.getFlashChipMode();
@@ -265,12 +265,12 @@ String getPage() {
 }
 
 //--------------------------------------------------------------------
-void handleRoot() {
-  server.send(200, "text/html", getPage());
+void handleRoot(AsyncWebServerRequest *request) {
+  request->send(200, "text/html", getPage());
 }
 
 //--------------------------------------------------------------------
-void handleTextInfo() {
+void handleTextInfo(AsyncWebServerRequest *request) {
   FlashMode_t ideMode = ESP.getFlashChipMode();
   //  uint32_t chipId = ESP.getFlashChipId();
 
@@ -322,101 +322,145 @@ void handleTextInfo() {
   message += "\n   http://" + String(Local_Name) + ".local/air_moins  : offeset air -0.25 degre";
   message += "\n";
   //Serial.print(message);
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
 }
 
 //--------------------------------------------------------------------
-void handleRestart_ESP() {
+void handleRestart_ESP(AsyncWebServerRequest *request) {
   String message = "Restarting the " + String(Local_Name) + "...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   restartFlag = true;
 }
 
 //--------------------------------------------------------------------
-void handleIDE_OTA() {
+void handleIDE_OTA(AsyncWebServerRequest *request) {
   String message = "Initialisation of software update server OTA via IDE...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   delay(1000);
   Start_WiFi_IDE_OTA();
 }
 
 //--------------------------------------------------------------------
-void handleSummerHour() {
+void handleSummerHour(AsyncWebServerRequest *request) {
   String message = "Passage à l'heure d'été...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   SetSummerHour(true);
 }
 
 //--------------------------------------------------------------------
-void handleWinterHour() {
+void handleWinterHour(AsyncWebServerRequest *request) {
   String message = "Passage à l'heure d'hiver...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   SetSummerHour(false);
 }
 
 //--------------------------------------------------------------------
-void handleResetOffsetTemp() {
+void handleResetOffsetTemp(AsyncWebServerRequest *request) {
   String message = "Reseting the Offsets Temp on the Arduino EEPROM...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   // reseter les offset de mesure températures air et eau
   ResetOffsetPreferences();
 }
 
 //--------------------------------------------------------------------
-void handleWaterPlus() {
+void handleWaterPlus(AsyncWebServerRequest *request) {
   String message = "Offset eau +0.25 degre...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
   SetWaterTempOffset(TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------
-void handleWaterMinus() {
+void handleWaterMinus(AsyncWebServerRequest *request) {
   String message = "Offset eau -0.25 degre...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
   SetWaterTempOffset(-TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------
-void handleAirPlus() {
+void handleAirPlus(AsyncWebServerRequest *request) {
   String message = "Offset air +0.25 degre...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
   SetAirTempOffset(TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------
-void handleAirMinus() {
+void handleAirMinus(AsyncWebServerRequest *request) {
   String message = "Offset air -0.25 degre...";
-  server.send(200, "text/plain", message);
+  request->send(200, "text/plain", message);
   Serial.println(message);
   // modifier l'offset de mesure de température
   SetAirTempOffset(-TEMPOFFSETINCREMENT);
 }
 
 //--------------------------------------------------------------------
-void handleNotFound() {
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+void handleNotFound(AsyncWebServerRequest *request) {
+  //  String message = "File Not Found\n\n";
+  //  message += "URL: ";
+  //  message += request->url();
+  //  message += "\nMethod: ";
+  //  message += (request->method() == HTTP_GET) ? "GET" : "POST";
+  //  message += "\nArguments: ";
+  //  message += request->args();
+  //  message += "\n";
+  //  for (uint8_t i = 0; i < request->args(); i++) {
+  //    message += " " + request->argName(i) + ": " + request->arg(i) + "\n";
+  //  }
+  //  request->send(404, "text/plain", message);
+  Serial.printf("NOT_FOUND: ");
+  if (request->method() == HTTP_GET)
+    Serial.printf("GET");
+  else if (request->method() == HTTP_POST)
+    Serial.printf("POST");
+  else if (request->method() == HTTP_DELETE)
+    Serial.printf("DELETE");
+  else if (request->method() == HTTP_PUT)
+    Serial.printf("PUT");
+  else if (request->method() == HTTP_PATCH)
+    Serial.printf("PATCH");
+  else if (request->method() == HTTP_HEAD)
+    Serial.printf("HEAD");
+  else if (request->method() == HTTP_OPTIONS)
+    Serial.printf("OPTIONS");
+  else
+    Serial.printf("UNKNOWN");
+  Serial.printf(" http://%s%s\n", request->host().c_str(), request->url().c_str());
+
+  if (request->contentLength()) {
+    Serial.printf("_CONTENT_TYPE: %s\n", request->contentType().c_str());
+    Serial.printf("_CONTENT_LENGTH: %u\n", request->contentLength());
   }
-  server.send(404, "text/plain", message);
+
+  int headers = request->headers();
+  int i;
+  for (i = 0; i < headers; i++) {
+    AsyncWebHeader* h = request->getHeader(i);
+    Serial.printf("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+  }
+
+  int params = request->params();
+  for (i = 0; i < params; i++) {
+    AsyncWebParameter* p = request->getParam(i);
+    if (p->isFile()) {
+      Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
+    } else if (p->isPost()) {
+      Serial.printf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+    } else {
+      Serial.printf("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+    }
+  }
+
+  request->send(404);
 }
 
 //-----------------------------------------------
@@ -437,37 +481,75 @@ void StartWEBserver () {
 
   // Page WEB de Update software WEB OTA
   //  server.on("/update_WEB", HTTP_GET, []() {
-  //    server.sendHeader("Connection", "close");
-  //    server.send(200, "text/html", serverIndex);
+  //    server->sendHeader("Connection", "close");
+  //    server->send(200, "text/html", serverIndex);
   //  });
   server.serveStatic("/update_WEB", SPIFFS, "/serverIndex.html");
 
   // Page WEB de Update software WEB OTA
   /*handling uploading firmware file */
   server.on("/update", HTTP_POST,
-  []() {
-    server.sendHeader("Connection", "close");
-    server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-    ESP.restart();
+  [](AsyncWebServerRequest * request) {
+    //    //request->sendHeader("Connection", "close");
+    //    request->send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    //    ESP.restart();
+    // the request handler is triggered after the upload has finished...
+    // create the response, add header, and send response
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+    response->addHeader("Connection", "close");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    restartFlag = true;  // Tell the main loop to restart the ESP
+    request->send(response);
   },
-  []() {
-    HTTPUpload& upload = server.upload();
-    if (upload.status == UPLOAD_FILE_START) {
-      Serial.printf("Update: %s\n", upload.filename.c_str());
+  //  [](AsyncWebServerRequest * request) {
+  //    HTTPUpload& upload = request->upload();
+  //    if (upload.status == UPLOAD_FILE_START) {
+  //      Serial.printf("Update: %s\n", upload.filename.c_str());
+  //      if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+  //        Update.printError(Serial);
+  //      }
+  //    } else if (upload.status == UPLOAD_FILE_WRITE) {
+  //      /* flashing firmware to ESP*/
+  //      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+  //        Update.printError(Serial);
+  //      }
+  //    } else if (upload.status == UPLOAD_FILE_END) {
+  //      if (Update.end(true)) { //true to set the size to the current progress
+  //        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+  //      } else {
+  //        Update.printError(Serial);
+  //      }
+  //    }
+  //  });
+
+  [](AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+    //Upload handler chunks in data
+
+    if (!index) { // if index == 0 then this is the first frame of data
+      Serial.printf("UploadStart: %s\n", filename.c_str());
+      Serial.setDebugOutput(true);
+
+      // calculate sketch space required for the update
+      //  uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+      //  if (!Update.begin(maxSketchSpace)) { //start with max available size
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
         Update.printError(Serial);
       }
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
-      /* flashing firmware to ESP*/
-      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-        Update.printError(Serial);
-      }
-    } else if (upload.status == UPLOAD_FILE_END) {
+      //Update.runAsync(true); // tell the updaterClass to run in async mode
+    }
+
+    //Write chunked data to the free sketch space
+    if (Update.write(data, len) != len) {
+      Update.printError(Serial);
+    }
+
+    if (final) { // if the final flag is set then this is the last frame of data
       if (Update.end(true)) { //true to set the size to the current progress
-        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        Serial.printf("Update Success: %u B\nRebooting...\n", index + len);
       } else {
         Update.printError(Serial);
       }
+      Serial.setDebugOutput(false);
     }
   });
 
@@ -489,11 +571,6 @@ void StartWEBserver () {
   server.on("/air_plus", handleAirPlus);
   // Page WEB de Incrément Hystérésis
   server.on("/air_moins", handleAirMinus);
-
-  // Page WEB de test
-  server.on("/inline", []() {
-    server.send(200, "text/plain", "this works as well");
-  });
 
   // Page WEB d'erreur
   server.onNotFound(handleNotFound);

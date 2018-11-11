@@ -46,7 +46,8 @@
 #include <Preferences.h>
 #include "NTPClient.h"
 #include <WiFi.h>
-#include <WebServer.h>
+#include "ESPAsyncWebServer.h"
+//#include <WebServer.h>
 #include <WiFiUdp.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
@@ -188,7 +189,9 @@ Configuration_T Configuration;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", NTP_OFFSET, NTP_PERIOD);
 // serveur WEB
-WebServer server(80);
+//WebServer server(80);
+AsyncWebServer server(80);
+AsyncEventSource events("/events");
 // client HTTP
 HTTPClient http;
 // OLED display
@@ -577,7 +580,7 @@ void loop() {
     //--------------------------
     // EXECUTER LE SERVEUR WEB
     //--------------------------
-    server.handleClient();
+    //server.handleClient();
 
     //---------------------------------------------
     // SURVEILLER UNE DEMANDE DE TELECHARGEMENT IDE
