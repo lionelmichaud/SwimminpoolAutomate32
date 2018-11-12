@@ -172,8 +172,8 @@ String getPageDeviceInfo() {
   page +=       "<em>Etat de la piscine</em>";
   page +=     "</h3>";
   page +=     "<a class='nav-link btn btn-info' href='#'>Temps NTP <span class='badge badge-light'>" + DateNTP + " / " + TimeNTP + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(PoolState.AirTemp) + " deg" + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(PoolState.WaterTemp) + " deg" + "</span></a><br>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(PoolState.AirTemp) + " deg" + (PoolState.ErrorTempAir ? "*" : "") + "</span></a>";
+  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(PoolState.WaterTemp) + " deg" + (PoolState.ErrorTempWater ? "*" : "") + "</span></a><br>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + CurrentModeString() + "</span></a>";
   page +=     "<a class='nav-link btn btn-primary' href='#'>Position du Volet <span class='badge badge-light'>" + CurrentCoverPositionString() + "</span></a>";
   page +=     "<ul>";
@@ -292,14 +292,14 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   message += "\n   IP:   " + the_IP_String;
   message += "\n   MAC:  " + the_MAC_String;
   message += "\n\nStatus:";
-  if (PoolState.ErrorTemp0) {
+  if (PoolState.ErrorTempSensorInit0) {
     message += "\n   Capteur temperature 0 => ERREUR adress=" + String1wireAddress(Device0_Thermometer);
   }
-  if (PoolState.ErrorTemp1) {
+  if (PoolState.ErrorTempSensorInit1) {
     message += "\n   Capteur temperature 1 => ERREUR adress=" + String1wireAddress(Device1_Thermometer);
   }
-  message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg";
-  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg";
+  message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg" + (PoolState.ErrorTempAir ? "*" : "");
+  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg" + (PoolState.ErrorTempWater ? "*" : "");
   message += "\n   Mode automatique  = " + CurrentModeString();
   if (Automat_Mode.ErrorMode) {
     message += " => ERREUR";

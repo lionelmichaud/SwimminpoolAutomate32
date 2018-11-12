@@ -87,7 +87,7 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
           //-------------------------------------
           // Switch commuté en position AUTOMATIC
           //-------------------------------------
-          if (!PoolState.ErrorTemp) {
+          if (!PoolState.ErrorTempSensorInit) {
             // commutation en mode Automatic seulement si les mesures de températures sont valides
             theAutomatMode.ModeState = AUTOMATIC;
 

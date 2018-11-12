@@ -117,7 +117,6 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
 #endif
     i++;
   }
-
   // Close the file (File's destructor doesn't close the file)
   configFile.close();
 
