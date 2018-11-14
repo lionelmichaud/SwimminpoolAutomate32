@@ -1,44 +1,5 @@
 void ResetOffsetPreferences();
 
-//-------------------------------------------------------
-// WEB PAGE FOR SLECTING THE BIN FILE TO UPLOAD TO ESP32
-//-------------------------------------------------------
-//const char* serverIndex = "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>"
-//                          "<form method='POST' action='#' enctype='multipart/form-data' id='upload_form'>"
-//                          "<input type='file' name='update'>"
-//                          "<input type='submit' value='Update'>"
-//                          "</form>"
-//                          "<div id='prg'>progress: 0%</div>"
-//                          "<script>"
-//                          "$('form').submit(function(e){"
-//                          "e.preventDefault();"
-//                          "var form = $('#upload_form')[0];"
-//                          "var data = new FormData(form);"
-//                          " $.ajax({"
-//                          "url: '/update',"
-//                          "type: 'POST',"
-//                          "data: data,"
-//                          "contentType: false,"
-//                          "processData:false,"
-//                          "xhr: function() {"
-//                          "var xhr = new window.XMLHttpRequest();"
-//                          "xhr.upload.addEventListener('progress', function(evt) {"
-//                          "if (evt.lengthComputable) {"
-//                          "var per = evt.loaded / evt.total;"
-//                          "$('#prg').html('progress: ' + Math.round(per*100) + '%');"
-//                          "}"
-//                          "}, false);"
-//                          "return xhr;"
-//                          "},"
-//                          "success:function(d, s) {"
-//                          "console.log('success!')"
-//                          "},"
-//                          "error: function (a, b, c) {"
-//                          "}"
-//                          "});"
-//                          "});"
-//                          "</script>";
-
 static String getContentType(const String& path) {
   if (path.endsWith(".html")) return "text/html";
   else if (path.endsWith(".htm")) return "text/html";
@@ -78,196 +39,137 @@ static String getContentType(const String& path) {
 //  return false;                                         // If the file doesn't exist, return false
 //}
 
-String getPageSoftwareInfo() {
-  FlashMode_t ideMode = ESP.getFlashChipMode();
-  //uint32_t chipId = ESP.getFlashChipId();
-
-  String page = "";
-  page += "<div class='row'>";
-
-  page +=   "<div class='col-md-6'>";
-  page +=      "<p class='lead'>";
-  page +=         "<strong>ESP Info</strong>";
-  page +=      "</p>";
-  page +=      "<div>";
-  page +=        "<span>Logiciel : " + String(SOFTWARE) + " - " + String(VERSION) + "</span>";
-  page +=      "</div>";
-  page +=      "<ul>";
-  //  page +=         "<li>";
-  //  page +=           "ESP Chip ID:     " + String(chipId);
-  //  page +=         "</li>";
-  //  page +=         "<li>";
-  //  page +=           "Flash size: " + String(ESP.getFlashChipRealSize() / 1024) + " kByte";
-  //  page +=           "ESP Chip ID Flash size: " + getFlashChipSizeByChipId(chipId);
-  //  page +=         "</li>";
-  //  page +=         "<li>";
-  //  page +=            "Free sketch space: " + String(ESP.getFreeSketchSpace() / 1024) + " kByte";
-  //  page +=         "</li>";
-  page +=         "<li>";
-  page +=           "Flash clock: " + String(ESP.getFlashChipSpeed() / 1000000) + " MHz";
-  page +=         "</li>";
-  page +=       "</ul>";
-  page +=    "</div>";
-
-  page += "</div>";
-
-  return page;
+// Replaces placeholder in the HTML file with their value
+String processor(const String& var) {
+  Serial.print(var);
+  if (var == "Software") {
+    String substitute = SOFTWARE;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "Version") {
+    String substitute = VERSION;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "FLASHCHIPSPEED") {
+    String substitute = String(ESP.getFlashChipSpeed() / 1000000);
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "AP_IP") {
+    String substitute = the_AP_IP_String;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "AUTOMAT_SSID") {
+    String substitute = String(Automat_ssid);
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "AP_MAC") {
+    String substitute = WiFi.softAPmacAddress();
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "AUTOMAT_SSID") {
+    String substitute = String(Automat_ssid);
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "AP_MAC") {
+    String substitute = WiFi.softAPmacAddress();
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "ST_IP") {
+    String substitute = the_IP_String;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "LOCAL_NAME") {
+    String substitute = String(Local_Name);
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "ST_SSID") {
+    String substitute = the_SSID;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "BEST_RSSI") {
+    String substitute = String(bestRSSI);
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "ST_MAC") {
+    String substitute = the_MAC_String;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "DATE_NTP") {
+    String substitute = DateNTP;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "TIME_NTP") {
+    String substitute = TimeNTP;
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "AIRTEMP") {
+    String substitute = String(PoolState.AirTemp);
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "ErrorTempAir") {
+    String substitute = (PoolState.ErrorTempAir ? "*" : "");
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "EAUTEMP") {
+    String substitute = String(PoolState.WaterTemp);
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "ErrorTempEau") {
+    String substitute = (PoolState.ErrorTempWater ? "*" : "");
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "CURRENT_MODE") {
+    String substitute = CurrentModeString();
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "CURRENT_COVER_POSITION") {
+    String substitute = CurrentCoverPositionString();
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "SEUIL_OUVRE") {
+    String substitute = String(Seuil());
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "SEUIL_FERME") {
+    String substitute = String(Seuil() - Hysteresis());
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "AIR_TEMP_OFFSET") {
+    String substitute = String(AirTempOffset());
+    Serial.println(substitute);
+    return substitute;
+  }
+  else if (var == "WATER_TEMP_OFFSET") {
+    String substitute = String(WaterTempOffset());
+    Serial.println(substitute);
+    return substitute;
+  }
+  return String();
 }
 
-String getPageESPInfo() {
-  String page = "";
-  page += "<div class='row'>";
-
-  page +=   "<div class='col-md-6'>";
-  page +=     "<p class='lead'>";
-  page +=         "<strong>Wi-Fi Access Point Info</strong>";
-  page +=      "</p>";
-  page +=      "<div>";
-  page +=         "<span>IP : " + the_AP_IP_String + "</span>";
-  page +=      "</div>";
-  page +=      "<ul>";
-  page +=         "<li>";
-  page +=            "SSID: " + String(Automat_ssid);
-  page +=         "</li>";
-  page +=         "<li>";
-  page +=            "MAC : " + WiFi.softAPmacAddress();
-  page +=         "</li>";
-  page +=      "</ul>";
-  page +=   "</div>";
-
-  page +=   "<div class='col-md-6'>";
-  page +=     "<p class='lead'>";
-  page +=         "<strong>Wi-Fi Station Info</strong>";
-  page +=      "</p>";
-  page +=      "<div>";
-  page +=          "<span>IP : " + the_IP_String + "</span>";
-  page +=       "</div>";
-  page +=       "<ul>";
-  page +=          "<li>";
-  page +=             "Local name: " + String(Local_Name) + ".local";
-  page +=          "</li>";
-  page +=          "<li>";
-  page +=             "SSID: " + the_SSID;
-  page +=          "</li>";
-  page +=          "<li>";
-  page +=             "RSSI: " + String(bestRSSI) + " dBm";
-  page +=          "</li>";
-  page +=          "<li>";
-  page +=             "MAC: " + the_MAC_String;
-  page +=          "</li>";
-  page +=       "</ul>";
-  page +=    "</div>";
-
-  page += "</div>";
-
-  return page;
-}
-
-String getPageDeviceInfo() {
-  String page = "";
-  page += "<div class='row'>";
-
-  page +=   "<div class='col-md-12'>";
-  page +=     "<h3 class='text-muted'>";
-  page +=       "<em>Etat de la piscine</em>";
-  page +=     "</h3>";
-  page +=     "<a class='nav-link btn btn-info' href='#'>Temps NTP <span class='badge badge-light'>" + DateNTP + " / " + TimeNTP + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>" + String(PoolState.AirTemp) + " deg" + (PoolState.ErrorTempAir ? "*" : "") + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>" + String(PoolState.WaterTemp) + " deg" + (PoolState.ErrorTempWater ? "*" : "") + "</span></a><br>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Mode automatique <span class='badge badge-light'>" + CurrentModeString() + "</span></a>";
-  page +=     "<a class='nav-link btn btn-primary' href='#'>Position du Volet <span class='badge badge-light'>" + CurrentCoverPositionString() + "</span></a>";
-  page +=     "<ul>";
-  page +=       "Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
-  page +=     "</ul>";
-  page +=   "</div>";
-
-  page += "</div>";
-
-  return page;
-}
-
-String getPageCommands() {
-  String page = "";
-  page += "<div class='row'>";
-
-  page +=   "<div class='col-md-12'>";
-  page +=       "<h3 class='text-muted'>";
-  page +=         "<em>Commandes disponibles</em>";
-  page +=       "</h3>";
-  page +=       "<a href=/update_IDE target=blank class='btn btn-danger'  >Mettre a jour le logiciel IDE OTA</a><br>";
-  page +=       "<a href=/update_WEB target=blank class='btn btn-danger'  >Mettre a jour le logiciel WEB OTA</a><br>";
-  page +=       "<a href=/restart    target=blank class='btn btn-danger'  >Red&eacute;marrer ESP</a><br>";
-  page +=       "<a href=/heure_ete  target=blank class='btn btn-warning' >Heure &eacute;t&eacute;</a><br>";
-  page +=       "<a href=/heure_hiver target=blank class='btn btn-warning' >Heure hiver</a><br>";
-  page +=       "<a href=/reset_offs target=blank class='btn btn-warning' >Reset temp offsets sur Arduino</a><br>";
-  page +=       "<a href=/info       target=blank class='btn btn-success' >Obtenir ces informations au format text</a><br>";
-
-  page +=       "<h5 class='text-left text-primary'>";
-  page +=         "Offset Temperature Air : " + String(AirTempOffset());
-  page +=       "</h5>";
-  //  page +=       "<div class='row'>";
-  //  page +=       "  <div class='col-md-6'>";
-  page +=       "<a class='nav-link btn btn-primary' href=/air_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></a>";
-  //  page +=       "  </div>";
-  //  page +=       "  <div class='col-md-6'>";
-  page +=       "<a class='nav-link btn btn-primary' href=/air_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></a><br>";
-  //  page +=       "  </div>";
-  //  page +=       "</div>";
-  page +=       "<h5 class='text-left text-primary'>";
-  page +=         "Offset Temperature Eau : " + String(WaterTempOffset());
-  page +=       "</h5>";
-  //  page +=       "<div class='row'>";
-  //  page +=       "  <div class='col-md-6'>";
-  page +=       "<a class='nav-link btn btn-primary' href=/eau_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></a>";
-  //  page +=       "  </div>";
-  //  page +=       "  <div class='col-md-6'>";
-  page +=       "<a class='nav-link btn btn-primary' href=/eau_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></a><br>";
-  //  page +=       "  </div>";
-  //  page +=       "</div>";
-  page +=   "</div>";
-
-  page += "</div>";
-
-  return page;
-}
-
-String getPage() {
-  const String header = "<!DOCTYPE html>"
-                        "<html lang='fr'>"
-                        "<head>"
-                        "<meta http-equiv='refresh' content='60' name='viewport' content='width=device-width, initial-scale=1'/>"
-                        "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>"
-                        "<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>"
-                        "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>"
-                        "</head>"
-                        "<body>"
-                        "<div class='container-fluid'>"
-                        "<div class='row'>"
-                        "<div class='col-md-12'>"
-                        "<div class='page-header'>"
-                        "<h1>Automate de la Piscine</h1>"
-                        "</div>"
-                        "</div>"
-                        "</div>";
-
-  String page = header;
-
-  page += getPageSoftwareInfo();
-  page += getPageESPInfo();
-  page += getPageDeviceInfo();
-  page += getPageCommands();
-
-  page += "</div>";
-  page += "</body>";
-
-  page += "</html>";
-  return page;
-}
-
-//--------------------------------------------------------------------
-void handleRoot(AsyncWebServerRequest *request) {
-  request->send(200, "text/html", getPage());
-}
 
 //--------------------------------------------------------------------
 void handleTextInfo(AsyncWebServerRequest *request) {
@@ -468,8 +370,10 @@ void handleNotFound(AsyncWebServerRequest *request) {
 //-----------------------------------------------
 void StartWEBserver () {
   // Page WEB de Status
-  server.on("/", handleRoot);
-
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/HomePage.html", String(), false, processor);
+  });
+  
   // Page WEB d'Info textuelles
   server.on("/info", handleTextInfo);
 
@@ -482,9 +386,9 @@ void StartWEBserver () {
   // Page WEB de Update software WEB OTA
   //  server.on("/update_WEB", HTTP_GET, []() {
   //    server->sendHeader("Connection", "close");
-  //    server->send(200, "text/html", serverIndex);
+  //    server->send(200, "text/html", UploadPage);
   //  });
-  server.serveStatic("/update_WEB", SPIFFS, "/serverIndex.html");
+  server.serveStatic("/update_WEB", SPIFFS, "/UploadPage.html");
 
   // Page WEB de Update software WEB OTA
   /*handling uploading firmware file */
