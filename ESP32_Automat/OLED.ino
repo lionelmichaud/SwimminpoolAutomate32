@@ -7,7 +7,7 @@ void initializeOLED(Configuration_T Config) {
   // The ESP is capable of rendering 60fps in 80Mhz mode
   // but that won't give you much time for anything else
   // run it in 160Mhz mode or just set it to 30 fps
-  ui.setTargetFPS(30);
+  ui.setTargetFPS(25);
 
   // Customize the active and inactive symbol
   ui.setActiveSymbol(activeSymbol);
@@ -50,7 +50,7 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   if (WiFi.status() == WL_CONNECTED) display->drawXbm(0, 0, wifi_02_width, wifi_02_height, wifi_02_bits);
 
   // center left
-  if (!PoolState.ErrorTemp0) {
+  if (!PoolState.ErrorTempSensorInit0) {
     display->setTextAlignment(TEXT_ALIGN_RIGHT);
     display->setFont(ArialMT_Plain_10);
     display->drawString(43, 0, "D0");
@@ -58,7 +58,7 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   }
 
   // center right
-  if (!PoolState.ErrorTemp1) {
+  if (!PoolState.ErrorTempSensorInit1) {
     display->setTextAlignment(TEXT_ALIGN_RIGHT);
     display->setFont(ArialMT_Plain_10);
     display->drawString(72, 0, "D1");
@@ -81,8 +81,8 @@ void drawPageSoftwareInfo(OLEDDisplay * display, OLEDDisplayUiState * state, int
   display->drawString(0 + x, 10 + y, "SW: " + String(SOFTWARE) + " - " + String(VERSION));
   display->drawString(0 + x, 20 + y, "Compiled :    " + String(__DATE__));
   //display->drawString(0 + x, 30 + y, "Dallas devices : " + String(DallasDeviceCount));
-  if (!PoolState.ErrorTemp0) display->drawString(0 + x, 30 + y, "D0: " + String1wireAddress(Device0_Thermometer));
-  if (!PoolState.ErrorTemp1) display->drawString(0 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
+  if (!PoolState.ErrorTempSensorInit0) display->drawString(0 + x, 30 + y, "D0: " + String1wireAddress(Device0_Thermometer));
+  if (!PoolState.ErrorTempSensorInit1) display->drawString(0 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
 }
 
 void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {
@@ -115,8 +115,8 @@ void drawDeviceInfoTemperatures(OLEDDisplay * display, OLEDDisplayUiState * stat
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_16);
 
-  display->drawString(64 + x, 14 + y,      "AIR : " + String(PoolState.AirTemp) + "°C");
-  display->drawString(64 + x, 14 + 20 + y, "EAU : " + String(PoolState.WaterTemp) + "°C");
+  display->drawString(64 + x, 14 + y,      "AIR : " + String(PoolState.AirTemp) + "°C" + (PoolState.ErrorTempAir ? "*" : ""));
+  display->drawString(64 + x, 14 + 20 + y, "EAU : " + String(PoolState.WaterTemp) + "°C" + (PoolState.ErrorTempWater ? "*" : ""));
 }
 
 void drawDeviceInfoStatus(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {

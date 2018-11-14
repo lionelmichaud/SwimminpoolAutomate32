@@ -17,7 +17,7 @@ void InitTemperatureSensors(Configuration_T Config) {
   DallasDeviceCount = DallasSensors.getDS18Count();
   Serial.print(DallasDeviceCount, DEC);
   Serial.println(" Dallas devices.");
-  //  PoolState.ErrorTemp = (DallasDeviceCount != 2);
+  //  PoolState.ErrorTempSensorInit = (DallasDeviceCount != 2);
 
   // clear the display
   display.clear();
@@ -28,29 +28,29 @@ void InitTemperatureSensors(Configuration_T Config) {
     Serial.print ("Device 0 address: ");
     print1wireAddress(Device0_Thermometer);
     Serial.println ();
-    Display1wireAddress("Device 0 address: ", Device0_Thermometer);
+    Display1wireAddress("Device 0: ", Device0_Thermometer);
     delay (2000);
   }
   else {
     Serial.println(F("  Unable to find address for Device 0"));
     delay (2000);
     DisplayAlert("Unable to find address for Device 0");
-    PoolState.ErrorTemp0 = true;
-    PoolState.ErrorTemp = true;
+    PoolState.ErrorTempSensorInit0 = true;
+    PoolState.ErrorTempSensorInit = true;
   }
   if (DallasSensors.getAddress(Device1_Thermometer, 1)) {
     Serial.print ("Device 1 address : ");
     print1wireAddress(Device1_Thermometer);
     Serial.println ();
-    Display1wireAddress("Device 1 address : ", Device1_Thermometer);
+    Display1wireAddress("Device 1: ", Device1_Thermometer);
     delay (2000);
   }
   else {
     Serial.println(F("  Unable to find address for Device 1"));
     delay (2000);
     DisplayAlert("Unable to find address for Device 1");
-    PoolState.ErrorTemp1 = true;
-    PoolState.ErrorTemp = true;
+    PoolState.ErrorTempSensorInit1 = true;
+    PoolState.ErrorTempSensorInit = true;
   }
 
   // report parasite power requirements
@@ -64,18 +64,18 @@ void InitTemperatureSensors(Configuration_T Config) {
   DallasSensors.setResolution(TEMPERATURE_PRECISION);
 
   delay (2000); // retarder l'init des thermistance
-  if (!PoolState.ErrorTemp0) {
+  if (!PoolState.ErrorTempSensorInit0) {
     Serial.print("Device 0 Resolution : ");
     Serial.println(DallasSensors.getResolution(Device0_Thermometer), DEC);
   }
-  if (!PoolState.ErrorTemp1) {
+  if (!PoolState.ErrorTempSensorInit1) {
     Serial.print("Device 1 Resolution : ");
     Serial.println(DallasSensors.getResolution(Device1_Thermometer), DEC);
   }
 
   // Get the initial temperatures
   DallasSensors.requestTemperatures(); // Send the command to get temperature readings
-  if (!PoolState.ErrorTemp) {
+  if (!PoolState.ErrorTempSensorInit) {
     PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
     Serial.print("Air Temperature is : "); Serial.println(PoolState.AirTemp);
     DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
@@ -133,10 +133,10 @@ void print1wireTemperature(DeviceAddress deviceAddress)
 //*****************************************
 //  display water temperature with RGB LED
 //*****************************************
-void DisplayWaterTemperatureOnLED (int WaterTemp)
+void DisplayWaterTemperatureOnLED (int WaterTemp, Configuration_T Config)
 {
-  int const Tmin = 20 * 10;
-  int const Tmax = 27 * 10;
+  int Tmin  = Config.RedLEDtemp   * 10;
+  int Tmax  = Config.GreenLEDtemp * 10;
   int Wtemp = WaterTemp * 10;
 
   // map the temperature to the range of the analog out:
@@ -162,33 +162,39 @@ void AcquireTemperatures()
   // read the value from the sensor: Air Temperature
   //AirTemp = TemperatureFrom3950NTC (pAirR) + TEMPOFFSETAIR;
   Temp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
-  if (abs(Temp - PoolState.AirTemp) < 10)
+  if (abs(Temp - PoolState.AirTemp) < 10) {
     PoolState.AirTemp = Temp;
+    PoolState.ErrorTempAir = false;
+  }
   else {
+    PoolState.ErrorTempAir = true;
 #if defined USB_OUTPUT
     Serial.print("Gros écart de température Air: Air Temp = ");
     Serial.println(Temp);
 #endif
   }
 #if defined DEBUG
-  Serial.print("Air Temperature is: ");
-  Serial.println(PoolState.AirTemp);
+  //  Serial.print("Air Temperature is: ");
+  //  Serial.println(PoolState.AirTemp);
 #endif
 
   // read the value from the sensor: Water Temperature
   //WaterTemp = TemperatureFrom3950NTC (pWaterR) + TEMPOFFSETWATER;
   Temp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
-  if (abs(Temp - PoolState.WaterTemp) < 10)
+  if (abs(Temp - PoolState.WaterTemp) < 10) {
     PoolState.WaterTemp = Temp;
+    PoolState.ErrorTempWater = false;
+  }
   else {
+    PoolState.ErrorTempWater = true;
 #if defined USB_OUTPUT
     Serial.print("Gros écart de température Eau: Eau Temp = ");
     Serial.println(Temp);
 #endif
   }
 #if defined DEBUG
-  Serial.print("Water Temperature is: ");
-  Serial.println(PoolState.WaterTemp);
+  //  Serial.print("Water Temperature is: ");
+  //  Serial.println(PoolState.WaterTemp);
 #endif
 }
 
@@ -197,7 +203,7 @@ void AcquireTemperatures()
 //**********************************************
 void SampleTemperatures()
 {
-  if (!PoolState.ErrorTemp) {
+  if (!PoolState.ErrorTempSensorInit) {
     // Send the command to get temperature readings
     DallasSensors.setWaitForConversion(false);  // makes it async
     DallasSensors.requestTemperatures();

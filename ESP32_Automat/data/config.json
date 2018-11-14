@@ -1,4 +1,6 @@
 {
+	"temperature LED rouge" : 20,
+	"temperature LED verte" : 27,
 	"flip OLED display" : true,
 	"temperature sampling period (s)" : 5,
 	"cover open/close duration (s)" : 145,

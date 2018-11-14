@@ -1,6 +1,10 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 0.6.0
+//  Passage au serveur WEB asynchrone
+//  Amélioration de la gestion des mesures de température abérantes
+//
 // VERSION 0.3.0
 //  Paramétrage inversion écran OLED #define Configuration.flipOLED
 //  Lecture des paramètres réseaux Wi-Fi en fichier SPIFF config JSON (SSID / Password)
@@ -16,7 +20,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "0.3.0"
+#define VERSION "1.0.0"
 
 #define DEBUG
 #define USB_OUTPUT
@@ -46,7 +50,8 @@
 #include <Preferences.h>
 #include "NTPClient.h"
 #include <WiFi.h>
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
+//#include <WebServer.h>
 #include <WiFiUdp.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
@@ -74,7 +79,7 @@
 //-------------------------------------------------
 const char *ConfigFilename = "/config.json";
 // Compute the required size: 6 x réseaux Wi-Fi max possible
-const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(12) + 660;
+const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(14) + 710;
 // paramètres Wi-Fi - station
 const char* Local_Name    = "esp32_pool";
 // paramètres Wi-Fi - Access Point
@@ -140,6 +145,8 @@ struct WiFiNetwok_T {
   String password;
 };
 struct Configuration_T {
+  int             RedLEDtemp       = 20;
+  int             GreenLEDtemp     = 27;
   bool            flipOLED         = false;
   unsigned long   intervalTemp     =   5000; // interval at which to sample the temperatures (milliseconds)
   unsigned long   timeoutOpenClose = 145000; // max duration of the opening or closure in mili-seconds (2minutes 25sec)
@@ -172,9 +179,11 @@ struct PoolState_T {
   float AirTemp       = -256.0;
   float WaterTemp     = -256.0;
   boolean ErrorConfig = false;
-  boolean ErrorTemp   = false;
-  boolean ErrorTemp0  = false;
-  boolean ErrorTemp1  = false;
+  boolean ErrorTempSensorInit   = false; // erreur à l'initialisation de l'un des capteurs one wire
+  boolean ErrorTempSensorInit0  = false; // erreur à l'initialisation du capteur one wire
+  boolean ErrorTempSensorInit1  = false; // erreur à l'initialisation du capteur one wire
+  boolean ErrorTempAir          = false; // température air mesurée invalide
+  boolean ErrorTempWater        = false; // température air mesurée invalide
 };
 
 //-------------------------------------------------
@@ -186,7 +195,9 @@ Configuration_T Configuration;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", NTP_OFFSET, NTP_PERIOD);
 // serveur WEB
-WebServer server(80);
+//WebServer server(80);
+AsyncWebServer server(80);
+AsyncEventSource events("/events");
 // client HTTP
 HTTPClient http;
 // OLED display
@@ -238,8 +249,8 @@ int AutoSwitchState = MANUAL;
 int TempLEDred =   0;
 int TempLEDgreen = 0;
 int TempLEDblue =  0;
-int Relay1 = HIGH; // Relais au repos => La clé manuelle à la main : automatisme débrayé
-int Relay2 = HIGH; // Relais au repos => Volet Fermé
+int Relay1 = HIGH; // Relais au repos (3.3V présent en entrée) => La clé manuelle a le controle : automatisme débrayé
+int Relay2 = HIGH; // Relais au repos (3.3V présent en entrée) => Volet Fermé
 int PeriodOfLowAirTemp = 0; // compte le nombre de périodes 'periodColdTimer' pendant lesquelles la temp à été vue basse
 float Temp =       0.0;
 
@@ -295,7 +306,7 @@ void ResetPreferences();
 void DumpPreferences();
 void print1wireAddress(DeviceAddress deviceAddress);
 void print1wireTemperature(DeviceAddress deviceAddress);
-void DisplayWaterTemperatureOnLED (int WaterTemp);
+void DisplayWaterTemperatureOnLED (int WaterTemp, Configuration_T Config);
 void SampleTemperatures();
 String String1wireAddress(DeviceAddress deviceAddress);
 boolean Start_WiFi_IDE_OTA();
@@ -343,7 +354,7 @@ void setup() {
   //------------------------------------------
   // Should load default config if run for the first time
   Serial.println(F("Loading configuration file in SPIFF..."));
-  PoolState.ErrorConfig = ReadConfig(ConfigFilename, Configuration);
+  PoolState.ErrorConfig = !ReadConfig(ConfigFilename, Configuration);
 
   // reserve n bytes for the Strings: to avoid dynamic realocations
   inputString.reserve(200);
@@ -522,7 +533,7 @@ void loop() {
     // SET OUTPUTS
     //-------------------------------------------------------
     // set the Water temp LED color as a function of Water temperature
-    DisplayWaterTemperatureOnLED (PoolState.WaterTemp);
+    DisplayWaterTemperatureOnLED (PoolState.WaterTemp, Configuration);
 
     //-------------------------------------------------------
     //  EXECUTE STATE MACHINES
@@ -575,7 +586,7 @@ void loop() {
     //--------------------------
     // EXECUTER LE SERVEUR WEB
     //--------------------------
-    server.handleClient();
+    //server.handleClient();
 
     //---------------------------------------------
     // SURVEILLER UNE DEMANDE DE TELECHARGEMENT IDE
