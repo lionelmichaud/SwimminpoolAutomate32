@@ -80,6 +80,7 @@ boolean Start_WiFi_IDE_OTA() {
 
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
     Serial.println("Start updating " + type);
+    events.send("Update Start", "ota");
     display.clear();
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
@@ -89,6 +90,7 @@ boolean Start_WiFi_IDE_OTA() {
 
   ArduinoOTA.onEnd([]() {
     Serial.println("\nEnd");
+    events.send("Update End", "ota");
     display.clear();
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_CENTER_BOTH);
@@ -98,6 +100,9 @@ boolean Start_WiFi_IDE_OTA() {
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    char p[32];
+    sprintf(p, "Progress: %u%%\n", (progress / (total / 100)));
+    events.send(p, "ota");
     display.drawProgressBar(4, 32, 120, 8, progress / (total / 100) );
     display.display();
   });
@@ -113,6 +118,12 @@ boolean Start_WiFi_IDE_OTA() {
   });
 
   ArduinoOTA.begin();
+
+  events.onConnect([](AsyncEventSourceClient * client) {
+    client->send("hello!", NULL, millis(), 1000);
+  });
+  server.addHandler(&events);
+
 #if defined VERBOSE
   Serial.println("IDE Update server initialized");
 #endif

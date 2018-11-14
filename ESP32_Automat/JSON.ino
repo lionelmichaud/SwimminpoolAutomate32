@@ -67,6 +67,10 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
   root_.prettyPrintTo(Serial);
 #endif
 
+  // get RVB LED parameters
+  Config.RedLEDtemp   = root["temperature LED rouge"] | 20;
+  Config.GreenLEDtemp = root["temperature LED verte"] | 27;
+
   // get OLED parameters
   Config.flipOLED = root["flip OLED display"].as<bool>();
 
@@ -113,16 +117,6 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
 #endif
     i++;
   }
-
-  // Copy values from the JsonObject to the Config
-  //config.port = root["port"] | 2731;
-  //  strlcpy(config.ssid,           // <- destination
-  //          root["ssid"] | " ",    // <- source
-  //          sizeof(config.ssid));  // <- destination's capacity
-  //  strlcpy(config.password,           // <- destination
-  //          root["password"] | " ",    // <- source
-  //          sizeof(config.password));  // <- destination's capacity
-
   // Close the file (File's destructor doesn't close the file)
   configFile.close();
 

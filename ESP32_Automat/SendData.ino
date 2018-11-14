@@ -8,17 +8,17 @@ void SendDataOverUSB ()
   Serial.println();
   Serial.println(F("----------------------------------"));
   Serial.println(F("*** TEMPERATURES ***"));
-  if (PoolState.ErrorTemp) {
+  if (PoolState.ErrorTempSensorInit) {
     Serial.print(F("Error temp = "));
-    Serial.println(PoolState.ErrorTemp);
+    Serial.println(PoolState.ErrorTempSensorInit);
   };
-  if (PoolState.ErrorTemp0) {
+  if (PoolState.ErrorTempSensorInit0) {
     Serial.print(F("Error temp device 0 = "));
-    Serial.println(PoolState.ErrorTemp0);
+    Serial.println(PoolState.ErrorTempSensorInit0);
   };
-  if (PoolState.ErrorTemp1) {
+  if (PoolState.ErrorTempSensorInit1) {
     Serial.print(F("Error temp device 1 = "));
-    Serial.println(PoolState.ErrorTemp1);
+    Serial.println(PoolState.ErrorTempSensorInit1);
   };
   Serial.print(F("Air       = "));
   Serial.print(PoolState.AirTemp);
@@ -72,10 +72,10 @@ void SendDataOverUSB ()
   Serial.print(TempLEDred); Serial.print(" / V="); Serial.print(TempLEDgreen); Serial.print(" / B="); Serial.print(TempLEDblue);
   Serial.println();
   Serial.print(F("Sortie Relai 1  = "));
-  Serial.print(Relay1 == HIGH ? "REPOS => La clé manuelle à la main" : "ACTIF => L'automate à la main");
+  Serial.print(Relay1 == HIGH ? "HIGH / REPOS => La clé manuelle a le controle" : "LOW / ACTIF => L'automate a le controle");
   Serial.println();
   Serial.print(F("Sortie Relai 2  = "));
-  Serial.print(Relay2 == HIGH ? "REPOS => Volet fermé" : "ACTIF => Volet ouvert");
+  Serial.print(Relay2 == HIGH ? "HIGH / REPOS => Volet fermé" : "LOW / ACTIF => Volet ouvert");
   Serial.println();
 #endif
 }
@@ -94,7 +94,7 @@ void SendDataToDomoticz ()
       //----------------------------------------
       // Transmettre Temperature Air à Domoticz
       //----------------------------------------
-      if (!PoolState.ErrorTemp) {
+      if (!PoolState.ErrorTempSensorInit) {
         sendSvalueDomoticz(String(PoolState.AirTemp), Configuration.domoticz.idxs.idx_airTemp);
 #if defined DEBUG
         Serial.print(F(">> TempAir = "));
@@ -108,7 +108,7 @@ void SendDataToDomoticz ()
       //----------------------------------------
       // Transmettre Temperature Eau à Domoticz
       //----------------------------------------
-      if (!PoolState.ErrorTemp) {
+      if (!PoolState.ErrorTempSensorInit) {
         sendSvalueDomoticz(String(PoolState.WaterTemp), Configuration.domoticz.idxs.idx_waterTemp);
 #if defined DEBUG
         Serial.print(F(">> TempEau = "));
