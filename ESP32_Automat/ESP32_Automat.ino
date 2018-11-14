@@ -20,7 +20,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "0.6.0"
+#define VERSION "1.0.0"
 
 #define DEBUG
 #define USB_OUTPUT
