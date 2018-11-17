@@ -341,19 +341,6 @@ int overlaysCount = 1;
 // SETUP
 //--------------------------------------------------------------------
 void setup() {
-  //-----------------------------------------------------
-  // --- Création des tâches concurrentes (dual-core) ---
-  //-----------------------------------------------------
-  //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
-  xTaskCreatePinnedToCore(
-    AutomatTaskCode,   /* Task function. */
-    "AutomatTask",     /* name of task. */
-    10000,       /* Stack size of task */
-    NULL,        /* parameter of the task */
-    1,           /* priority of the task */
-    &AutomatTask,      /* Task handle to keep track of created task */
-    0);          /* pin task to core 0 */
-
   //-------------------------------
   // initialize serial
   //-------------------------------
@@ -511,6 +498,20 @@ void setup() {
   Serial.println(millis());
   TimerWiFi = timer.setInterval(Configuration.intervalWiFi, SendDataToDomoticz);
   //timer.restartTimer(TimerWiFi);
+
+  //-----------------------------------------------------
+  // --- Création des tâches concurrentes (dual-core) ---
+  //-----------------------------------------------------
+  //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
+  xTaskCreatePinnedToCore(
+    AutomatTaskCode,   /* Task function. */
+    "AutomatTask",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task */
+    &AutomatTask,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
+  Serial.println("Automat task created on core 0...");
 }
 
 //--------------------------------------------------------------------
@@ -595,10 +596,7 @@ void loop() {
 // TASK AutomatTaskCode (EXECUTES ON CORE 0)
 //--------------------------------------------------------------------
 void AutomatTaskCode( void * pvParameters ) {
-  Serial.print("Task1 running on core ");
-  Serial.println(xPortGetCoreID());
-
-  for (;;) {
+  while (true) {
     //-------------------------------------------------------
     // ACQUISITIONS OF INPUTS
     //-------------------------------------------------------
