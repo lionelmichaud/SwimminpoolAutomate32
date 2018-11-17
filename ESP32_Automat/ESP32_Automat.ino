@@ -1,6 +1,12 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.0.0
+//  Version 1.0.0 - Multi Core
+//
+// VERSION 1.0.0
+//  Version complète et testée - Mono Core
+//
 // VERSION 0.6.0
 //  Passage au serveur WEB asynchrone
 //  Amélioration de la gestion des mesures de température abérantes
@@ -20,7 +26,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "1.0.0"
+#define VERSION "2.0.0"
 
 #define DEBUG
 #define USB_OUTPUT
@@ -73,6 +79,11 @@
 #include "images.h"
 #include "OLEDDisplayUi.h"
 #include <DallasTemperature.h>
+
+//------------------------------------------------
+// --- TASKS HANDLER DECLARATIONS (DUAL-CORE)  ---
+//------------------------------------------------
+TaskHandle_t AutomatTask;
 
 //-------------------------------------------------
 // --- Déclaration des constantes globales ---
@@ -317,6 +328,7 @@ boolean SwitchRelayOpenCloseCover (int State);
 void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState);
 void SendDataToDomoticz ();
 boolean ReadConfig(const char *filename, Configuration_T& Config);
+void AutomatTaskCode( void * pvParameters );
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
@@ -492,10 +504,24 @@ void setup() {
   Serial.println(millis());
   TimerWiFi = timer.setInterval(Configuration.intervalWiFi, SendDataToDomoticz);
   //timer.restartTimer(TimerWiFi);
+
+  //-----------------------------------------------------
+  // --- Création des tâches concurrentes (dual-core) ---
+  //-----------------------------------------------------
+  //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
+  xTaskCreatePinnedToCore(
+    AutomatTaskCode,   /* Task function. */
+    "AutomatTask",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task */
+    &AutomatTask,      /* Task handle to keep track of created task */
+    0);          /* pin task to core 0 */
+  Serial.println("Automat task created on core 0...");
 }
 
 //--------------------------------------------------------------------
-// LOOP
+// LOOP (EXECUTES ON CORE 1 BY DEFAULT)
 //--------------------------------------------------------------------
 void loop() {
   if (restartFlag) {
@@ -514,31 +540,6 @@ void loop() {
     // You can do some work here
     // Don't do stuff if you are below your
     // time budget.
-
-    //-------------------------------------------------------
-    // ACQUISITIONS OF INPUTS
-    //-------------------------------------------------------
-
-    // read the value from the sensor: Internal Temperature
-    //IntTempR = TemperatureFromTMP36 (pIntTempR) + TEMPOFFSETINT;
-
-    // read the value from the Mode switch: Automatic = FERME/LOW, Manual = OUVERT/HIGH
-    AutoSwitch = digitalRead(pAutoSwitch);
-    if (AutoSwitch == LOW)
-      AutoSwitchState = AUTOMATIC;
-    else
-      AutoSwitchState = MANUAL;
-
-    //-------------------------------------------------------
-    // SET OUTPUTS
-    //-------------------------------------------------------
-    // set the Water temp LED color as a function of Water temperature
-    DisplayWaterTemperatureOnLED (PoolState.WaterTemp, Configuration);
-
-    //-------------------------------------------------------
-    //  EXECUTE STATE MACHINES
-    //-------------------------------------------------------
-    AutomatRun(Configuration, Automat_Mode, Automat_Cmd, AutoSwitchState);
 
     //-------------------------------------------------------
     // RECUPERER LES CARACTERES ARRIVANT SUR LA LIAISON SERIE
@@ -583,11 +584,6 @@ void loop() {
       stringComplete = false;
     }
 
-    //--------------------------
-    // EXECUTER LE SERVEUR WEB
-    //--------------------------
-    //server.handleClient();
-
     //---------------------------------------------
     // SURVEILLER UNE DEMANDE DE TELECHARGEMENT IDE
     //---------------------------------------------
@@ -599,5 +595,35 @@ void loop() {
     timeClient.update();
     TimeNTP = timeClient.getFormattedTime();
     DateNTP = timeClient.getFormattedDate();
+  }
+}
+
+//--------------------------------------------------------------------
+// TASK AutomatTaskCode (EXECUTES ON CORE 0)
+//--------------------------------------------------------------------
+void AutomatTaskCode( void * pvParameters ) {
+  while (true) {
+    //-------------------------------------------------------
+    // ACQUISITIONS OF INPUTS
+    //-------------------------------------------------------
+    // read the value from the Mode switch: Automatic = FERME/LOW, Manual = OUVERT/HIGH
+    AutoSwitch = digitalRead(pAutoSwitch);
+    if (AutoSwitch == LOW)
+      AutoSwitchState = AUTOMATIC;
+    else
+      AutoSwitchState = MANUAL;
+
+    //-------------------------------------------------------
+    // SET OUTPUTS
+    //-------------------------------------------------------
+    // set the Water temp LED color as a function of Water temperature
+    DisplayWaterTemperatureOnLED (PoolState.WaterTemp, Configuration);
+
+    //-------------------------------------------------------
+    //  EXECUTE STATE MACHINES
+    //-------------------------------------------------------
+    AutomatRun(Configuration, Automat_Mode, Automat_Cmd, AutoSwitchState);
+
+    delay(500);
   }
 }
