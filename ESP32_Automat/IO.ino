@@ -1,3 +1,40 @@
+//-------------------------------
+// initialize IO ports
+//-------------------------------
+void InitializeIO() {
+  printlnA("Initializing I/O...");
+  // inputs
+  //    pinMode(pIntTempR, INPUT);
+  pinMode(pAutoSwitch, INPUT_PULLUP);
+  // outputs
+  pinMode(pAutoLED, OUTPUT);
+  pinMode(pTempLEDred, OUTPUT);
+  pinMode(pTempLEDgreen, OUTPUT);
+  pinMode(pTempLEDblue, OUTPUT);
+  pinMode(pRelay1, OUTPUT);
+  pinMode(pRelay2, OUTPUT);
+  //    open relays
+  digitalWrite(pRelay1, Relay1);
+  digitalWrite(pRelay2, Relay2);
+
+  //    switch off Auto LED
+  digitalWrite(pAutoLED, AutoLED);
+
+  //    configure LED PWM functionalitites
+  ledcSetup(cTempLEDred,   LEDfreq, LEDres);
+  ledcSetup(cTempLEDgreen, LEDfreq, LEDres);
+  ledcSetup(cTempLEDblue,  LEDfreq, LEDres);
+  //    attach the channel to the GPIO to be controlled
+  ledcAttachPin(pTempLEDred,   cTempLEDred);
+  ledcAttachPin(pTempLEDgreen, cTempLEDgreen);
+  ledcAttachPin(pTempLEDblue,  cTempLEDblue);
+  //    switch off Water Temperature LED color between red (cold) and green (hot):
+  ledcWrite(cTempLEDred, 0);
+  ledcWrite(cTempLEDgreen, 0);
+  ledcWrite(cTempLEDblue, 0);
+}
+
+
 //-------------------------------------------------
 //  blink Red Auto LED when in AUTOMATIC Mode
 //-------------------------------------------------

@@ -1,99 +1,126 @@
 <!DOCTYPE html>
 <html lang='fr'>
+
 <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
 	<meta http-equiv='refresh' content='60' name='viewport' content='width=device-width, initial-scale=1'/>
-	<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
-	<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
-	<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
+
+    <!-- Bootstrap CSS -->
+	<!-- <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'> -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
 </head>
 
-<body>
-	<div class='container-fluid'>
-		<div class='row'>
-			<div class='col-md-12'>
-				<div class='page-header'>
-					<h1>Automate de la Piscine</h1>
+ <body>
+    <div class="container-fluid">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="page-header">
+					<h1>
+						Automate de la Piscine <small>Web page</small>
+					</h1>
 				</div>
-			</div>
-		</div>
-		<div class='row'>
-	  		<div class='col-md-6'>
-	     		<p class='lead'>
-	        		<strong>ESP Info</strong>
-	     		</p>
-		     	<div>
-		       		<span>Logiciel : %Software% - %Version% </span>
-		     	</div>
-		   	</div>
-		</div>
-
-		<div class='row'>
-			<div class='col-md-6'>
-				<p class='lead'>
-					<strong>Wi-Fi Access Point Info</strong>
-				</p>
 				<div>
-					<span>IP : %AP_IP%</span>
+					<ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+						<li class="nav-item">
+							<a class="nav-link" href="#tab_logiciel" role="tab" data-toggle="pill" aria-controls="tab_logiciel" aria-selected="false">Logiciel</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="#tab_ESP" role="tab" data-toggle="pill" aria-controls="tab_ESP" aria-selected="false">ESP</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="#tab_AP" role="tab" data-toggle="pill" aria-controls="tab_AP" aria-selected="false">Wi-Fi Access Point</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="#tab_ST" role="tab" data-toggle="pill" aria-controls="tab_ST" aria-selected="false">Wi-Fi Station</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link active" href="#tab_State" role="tab" data-toggle="pill" aria-controls="tab_State" aria-selected="true">Etat</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="#tab_Cmd" role="tab" data-toggle="pill" aria-controls="tab_Cmd" aria-selected="false">Commandes</a>
+						</li>
+					</ul>
+					<div class="tab-content" id="pills-tabContent">
+						<div class="tab-pane" role="tabpanel" id="tab_logiciel">
+			       			<span>Logiciel : %Software% - %Version% </span>
+						</div>
+						<div class="tab-pane" role="tabpanel" id="tab_ESP">
+							<ul>
+								<li>Flash Clock: %FLASHCHIP_SPEED%</li>
+								<li>Flash Mode : %FLASHCHIP_MODE%</li>
+							</ul>
+						</div>
+						<div class="tab-pane" role="tabpanel" id="tab_AP">
+							<span>IP : %AP_IP%</span>
+							<ul>
+								<li>SSID: %AUTOMAT_SSID%</li>
+								<li>MAC : %AP_MAC%</li>
+							</ul>
+						</div>
+						<div class="tab-pane" role="tabpanel" id="tab_ST">
+	   						<span>IP : %ST_IP%</span>
+							<ul>
+			   					<li>Local name: %LOCAL_NAME%.local</li>
+			   					<li>SSID: %ST_SSID%</li>
+			   					<li>RSSI: %BEST_RSSI% dBm</li>
+			   					<li>MAC: %ST_MAC%</li>
+							</ul>
+						</div>
+						<div class="tab-pane active" role="tabpanel" id="tab_State">
+							<p>
+							</p>
+							<p>
+								<button type="button" class="btn btn-info" >Temps NTP <span class="badge badge-light">%DATE_NTP% / %TIME_NTP%</span></button>
+							</p>
+							<p>
+				    			<button type="button" class="btn btn-primary" >Temp air <span class='badge badge-light'>%AIRTEMP% deg %ErrorTempAir%</span></button>
+				    			<button type="button" class="btn btn-primary" >Temp eau <span class='badge badge-light'>%EAUTEMP% deg %ErrorTempEau%</span></button>
+							</p>
+							<p>
+				    			<button type="button" class="btn btn-primary" >Mode <span class='badge badge-light'>%CURRENT_MODE%</span></button>
+				    			<button type="button" class="btn btn-primary" >Volet <span class='badge badge-light'>%CURRENT_COVER_POSITION%</span></button>
+							</p>
+								<a>Seuils : Temp Air = Temp Eau + <span class="badge badge-secondary">%SEUIL_OUVRE%</span> (ouvre) / <span class="badge badge-secondary">%SEUIL_FERME%</span> (ferme)</a>
+						</div>
+						<div class="tab-pane" role="tabpanel" id="tab_Cmd">
+							<p>
+							</p>
+							<a href=/update_IDE  target=blank class='btn btn-danger btn-block'  >Mettre a jour via IDE OTA</a>
+							<a href=/update_WEB  target=blank class='btn btn-danger btn-block'  >Mettre a jour via WEB OTA</a>
+							<a href=/restart     target=blank class='btn btn-danger btn-block'  >Red&eacute;marrer ESP</a>
+							<a href=/info        target=blank class='btn btn-success btn-block' >Obtenir ces informations au format text</a>
+							<a href=/heure_ete   target=blank class='btn btn-primary btn-block' >Heure &eacute;t&eacute;</a>
+							<a href=/heure_hiver target=blank class='btn btn-primary btn-block' >Heure hiver</a>
+							<a href=/reset_offs  target=blank class='btn btn-primary btn-block' >Reset temp offsets sur Arduino</a>
+							<p>
+							</p>
+
+							<div class="row">
+								<div class="col-md-6">
+									<h6 class='text-left text-primary'>Offset Temperature Air : %AIR_TEMP_OFFSET%</h6>
+					      			<button type="button" class="btn btn-primary btn-lg" href=/air_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></button>
+									<button type="button" class="btn btn-primary btn-lg" href=/air_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></button>
+									<p>
+									</p>
+								</div>
+								<div class="col-md-6">
+									<h6 class='text-left text-primary'>Offset Temperature Eau : %WATER_TEMP_OFFSET%</h6>
+									<button type="button" class="btn btn-primary btn-lg" href=/eau_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></button>
+									<button type="button" class="btn btn-primary btn-lg" href=/eau_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></button>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<ul>
-					<li>SSID: %AUTOMAT_SSID%</li>
-					<li>MAC : %AP_MAC%</li>
-				</ul>
-			</div>
-
-			<div class='col-md-6'>
-				<p class='lead'>
-					<strong>Wi-Fi Station Info</strong>
-				</p>
-				<div>
-   					<span>IP : %ST_IP%</span>
-				</div>
-				<ul>
-   					<li>Local name: %LOCAL_NAME%.local</li>
-   					<li>SSID: %ST_SSID%</li>
-   					<li>RSSI: %BEST_RSSI% dBm</li>
-   					<li>MAC: %ST_MAC%</li>
-				</ul>
-  			</div>
-		</div>
-
-		<div class='row'>
-			<div class='col-md-12'>
-    			<h3 class='text-muted'>
-    				<em>Etat de la piscine</em>
-    			</h3>
-    			<a class='nav-link btn btn-info' href='#'>Temps NTP <span class='badge badge-light'>%DATE_NTP% / %TIME_NTP%</span></a><br>
-    			<a class='nav-link btn btn-primary' href='#'>Temp air <span class='badge badge-light'>%AIRTEMP% deg %ErrorTempAir%</span></a>
-    			<a class='nav-link btn btn-primary' href='#'>Temp eau <span class='badge badge-light'>%EAUTEMP% deg %ErrorTempEau%</span></a><br>
-    			<a class='nav-link btn btn-primary' href='#'>Mode <span class='badge badge-light'>%CURRENT_MODE%</span></a>
-    			<a class='nav-link btn btn-primary' href='#'>Volet <span class='badge badge-light'>%CURRENT_COVER_POSITION%</span></a>
-    			<ul>
-      				Seuils : Temp Air = Temp Eau + %SEUIL_OUVRE% (ouvre) / %SEUIL_FERME% (ferme)
-    			</ul>
-			</div>
-		</div>
-
-		<div class='row'>
-			<div class='col-md-12'>
-    			<h3 class='text-muted'>
-        			<em>Commandes disponibles</em>
-    			</h3>
-				<a href=/update_IDE target=blank class='btn btn-danger'  >Mettre a jour le logiciel IDE OTA</a>
-				<a href=/update_WEB target=blank class='btn btn-danger'  >Mettre a jour le logiciel WEB OTA</a><br>
-				<a href=/restart    target=blank class='btn btn-danger'  >Red&eacute;marrer ESP</a><br>
-				<a href=/info       target=blank class='btn btn-success' >Obtenir ces informations au format text</a><br>
-				<a href=/heure_ete  target=blank class='btn btn-warning' >Heure &eacute;t&eacute;</a>
-				<a href=/heure_hiver target=blank class='btn btn-warning' >Heure hiver</a><br>
-				<a href=/reset_offs target=blank class='btn btn-warning' >Reset temp offsets sur Arduino</a><br>
-				
-				<h5 class='text-left text-primary'>Offset Temperature Air : %AIR_TEMP_OFFSET%</h5>
-      			<a class='nav-link btn btn-primary' href=/air_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></a>
-				<a class='nav-link btn btn-primary' href=/air_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></a><br>
-				<h5 class='text-left text-primary'>Offset Temperature Eau : %WATER_TEMP_OFFSET%</h5>
-				<a class='nav-link btn btn-primary' href=/eau_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></a>
-				<a class='nav-link btn btn-primary' href=/eau_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></a><br>
 			</div>
 		</div>
 	</div>
-</body>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+   </body>
 </html>

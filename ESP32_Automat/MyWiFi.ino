@@ -2,9 +2,7 @@
 // . START A WIFI ACCESS POINT
 //-----------------------------------------------
 boolean StartWiFiSoftAP(Configuration_T Config) {
-#if defined VERBOSE
-  Serial.println("Wi-Fi access point starting...");
-#endif
+  printlnA("Wi-Fi access point starting...");
 
   char ap_password[Config.automat_pwd.length() + 1];
   Config.automat_pwd.toCharArray(ap_password, Config.automat_pwd.length() + 1); // récupère le param dans le tableau de char
@@ -16,15 +14,11 @@ boolean StartWiFiSoftAP(Configuration_T Config) {
   Ypos = 0;
 
   if (result == true) {
-#if defined VERBOSE
-    Serial.println("Wi-Fi access point started");
-#endif
+    printlnA("Wi-Fi access point started");
     DisplayOneMoreLine("Wi-Fi access point started", TEXT_ALIGN_LEFT);
   }
   else {
-#if defined VERBOSE
-    Serial.println("Wi-Fi access point failed!");
-#endif
+    printlnA("Wi-Fi access point failed!");
     DisplayAlert("Wi-Fi access point failed !");
     display.setFont(ArialMT_Plain_10);
     return false;
@@ -32,10 +26,8 @@ boolean StartWiFiSoftAP(Configuration_T Config) {
 
   AP_IP = WiFi.softAPIP();
   the_AP_IP_String = String(AP_IP[0]) + "." + String(AP_IP[1]) + "." + String(AP_IP[2]) + "." + String(AP_IP[3]);
-#if defined VERBOSE
-  Serial.print("  AP IP address: ");
-  Serial.println(AP_IP);
-#endif
+  printA("  AP IP address: ");
+  printlnA(AP_IP);
 
   DisplayOneMoreLine("AP IP @ " + the_AP_IP_String, TEXT_ALIGN_LEFT);
 
@@ -48,10 +40,8 @@ boolean StartWiFiSoftAP(Configuration_T Config) {
 boolean Start_WiFi_WEB_OTA() {
   //  httpUpdater.setup(&server);
   //  DisplayOneMoreLine("HTTP Update Server ready", TEXT_ALIGN_LEFT);
-  //#if defined VERBOSE
-  //  Serial.printf(">HTTP Update Server ready! Open http://%s.local/update in your browser\n", Local_Name);
+  //  debugD(">HTTP Update Server ready! Open http://%s.local/update in your browser\n", Local_Name);
   //  delay(aDelay);
-  //#endif
 }
 
 //---------------------------------------------------
@@ -79,7 +69,7 @@ boolean Start_WiFi_IDE_OTA() {
       type = "filesystem";
 
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("Start updating " + type);
+    printlnA("Start updating " + type);
     events.send("Update Start", "ota");
     display.clear();
     display.setFont(ArialMT_Plain_10);
@@ -89,7 +79,7 @@ boolean Start_WiFi_IDE_OTA() {
   });
 
   ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
+    printlnA("\nEnd");
     events.send("Update End", "ota");
     display.clear();
     display.setFont(ArialMT_Plain_10);
@@ -99,7 +89,7 @@ boolean Start_WiFi_IDE_OTA() {
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    debugA("Progress: %u%%\r", (progress / (total / 100)));
     char p[32];
     sprintf(p, "Progress: %u%%\n", (progress / (total / 100)));
     events.send(p, "ota");
@@ -108,12 +98,12 @@ boolean Start_WiFi_IDE_OTA() {
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    debugE("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) printlnE("Auth Failed")
+      else if (error == OTA_BEGIN_ERROR) printlnE("Begin Failed")
+        else if (error == OTA_CONNECT_ERROR) printlnE("Connect Failed")
+          else if (error == OTA_RECEIVE_ERROR) printlnE("Receive Failed")
+            else if (error == OTA_END_ERROR) printlnE("End Failed");
     ESP.restart();
   });
 
@@ -124,9 +114,7 @@ boolean Start_WiFi_IDE_OTA() {
   });
   server.addHandler(&events);
 
-#if defined VERBOSE
-  Serial.println("IDE Update server initialized");
-#endif
+  printlnA("IDE Update server initialized");
 }
 
 //-----------------------------------------------
@@ -155,15 +143,11 @@ boolean ConnectToWiFi(Configuration_T Config) {
   //--------------------
   // SCAN WI-FI
   //--------------------
-#if defined VERBOSE
-  Serial.println("Wi-Fi scan start...");
-#endif
+  printlnA("Wi-Fi scan start...");
 
   // WiFi.scanNetworks will return the number of networks found
   int n = WiFi.scanNetworks();
-#if defined VERBOSE
-  Serial.println("Wi-Fi scan done");
-#endif
+  printlnA("Wi-Fi scan done");
   // clear the display
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -174,19 +158,15 @@ boolean ConnectToWiFi(Configuration_T Config) {
   // SELECT BEST WI-FI AND CONNECT TO IT IF IT'S YOURS
   //--------------------------------------------------
   if (n == 0) {
-#if defined VERBOSE
-    Serial.println(" no Wi-Fi network found !!");
-#endif
+    printlnA(" no Wi-Fi network found !!");
     DisplayAlert("No Wi-Fi network found !!");
     display.setFont(ArialMT_Plain_10);
     return false;
   }
   else
   {
-#if defined VERBOSE
-    Serial.print(" "); Serial.print(n);
-    Serial.println(" Wi-Fi networks found:");
-#endif
+    printA(" "); printA(n);
+    printlnA(" Wi-Fi networks found:");
     //DisplayOneMoreLine(String(n) + " Wi-Fi networks found:", TEXT_ALIGN_LEFT);
     bestRSSI = -600;
     selectedWiFi = -1;
@@ -210,46 +190,40 @@ boolean ConnectToWiFi(Configuration_T Config) {
           selectedWiFi = i;
         }
       }
-#if defined VERBOSE
       //--------------------------------------------
       // Print SSID and RSSI for each network found
       //--------------------------------------------
-      Serial.print("   "); Serial.print(i + 1);
-      Serial.print(": ");
-      Serial.print(WiFi.SSID(i));
-      Serial.print(" (RSSI=");
-      Serial.print(theRSSI);
-      Serial.println(")");
-      //Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
-#endif
+      printA("   "); printA(i + 1);
+      printA(": ");
+      printA(WiFi.SSID(i));
+      printA(" (RSSI=");
+      printA(theRSSI);
+      printlnA(")");
+      //printlnA((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
     }
     char selected_ssid[WiFi.SSID(selectedWiFi).length() + 1]; // tableau de char de la taille du String param+1 (caractère de fin de ligne)
     WiFi.SSID(selectedWiFi).toCharArray(selected_ssid, WiFi.SSID(selectedWiFi).length() + 1); // récupère le param dans le tableau de char
     the_SSID = WiFi.SSID(selectedWiFi);
     the_password = myWiFiPassword(Config, the_SSID);
 
-#if defined VERBOSE
-    Serial.println("");
-    Serial.print("Connecting to Wifi : ");
-    Serial.print(selected_ssid);
-    Serial.print(" with password : ");
-    Serial.println(the_password);
-#endif
+    printlnA("");
+    printA("Connecting to Wifi : ");
+    printA(selected_ssid);
+    printA(" with password : ");
+    printlnA(the_password);
     DisplayOneMoreLine("Connecting to : " + String(selected_ssid), TEXT_ALIGN_LEFT);
 
     //--------------------
     // CONNECTION WI-FI
     //--------------------
-    //Serial.println(password);
+    //printlnA(password);
     char selected_password[the_password.length() + 1];
     the_password.toCharArray(selected_password, the_password.length() + 1); // récupère le param dans le tableau de char
     WiFi.begin(selected_ssid, selected_password);
     int connectionAttemps = 0;
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
-#if defined VERBOSE
-      Serial.print(".");
-#endif
+      printA(".");
       display.drawProgressBar(4, 54, 120, 6, int((connectionAttemps * 100 ) / MaxAttempts) );
       // display buffer
       display.display();
@@ -258,9 +232,7 @@ boolean ConnectToWiFi(Configuration_T Config) {
 
       // redémarrer si pas de connection au bout de 30 secondes
       if (connectionAttemps == MaxAttempts) {
-#if defined VERBOSE
-        Serial.println("Rebooting ESP...");
-#endif
+        printlnA("Rebooting ESP...");
         DisplayAlert("No connection. Rebooting ESP...");
         ESP.restart();
       }
@@ -270,18 +242,16 @@ boolean ConnectToWiFi(Configuration_T Config) {
     //----------------------
     //digitalWrite(redLEDpin, HIGH);
 
-#if defined VERBOSE
-    Serial.println("");
-    Serial.println("WiFi connected");
+    printlnA("");
+    printlnA("WiFi connected");
     the_IP = WiFi.localIP();
     the_IP_String = String(the_IP[0]) + "." + String(the_IP[1]) + "." + String(the_IP[2]) + "." + String(the_IP[3]);
-    Serial.print("  IP address: ");
-    Serial.println(the_IP);
+    printA("  IP address: ");
+    printlnA(the_IP);
     WiFi.macAddress(mac);
     the_MAC_String = String(mac[0], HEX) + ":" + String(mac[1], HEX) + ":" + String(mac[2], HEX) + ":" + String(mac[3], HEX) + ":" + String(mac[4], HEX) + ":" + String(mac[5], HEX);
-    Serial.print("  MAC address: ");
-    Serial.println(the_MAC_String);
-#endif
+    printA("  MAC address: ");
+    printlnA(the_MAC_String);
 
     // clear the display
     display.clear();
@@ -304,14 +274,10 @@ boolean ConnectToWiFi(Configuration_T Config) {
     if (!MDNS.begin(Local_Name)) {
       DisplayAlert("Error setting up MDNS responder !");
       display.setFont(ArialMT_Plain_10);
-#if defined VERBOSE
-      Serial.println(" Error setting up MDNS responder!");
-#endif
+      printlnA(" Error setting up MDNS responder!");
     } else {
       DisplayOneMoreLine("mDNS responder started", TEXT_ALIGN_LEFT);
-#if defined VERBOSE
-      Serial.println("mDNS responder started");
-#endif
+      printlnA("mDNS responder started");
     }
     // Add service to MDNS-SD
     delay(1000);
@@ -333,27 +299,27 @@ boolean ConnectToWiFi(Configuration_T Config) {
 }
 
 void BrowseService(const char * service, const char * proto) {
-  Serial.printf("Browsing for service _%s._%s.local. ... ", service, proto);
+  debugA("Browsing for service _%s._%s.local. ... ", service, proto);
   int n = MDNS.queryService(service, proto);
   if (n == 0) {
-    Serial.println("no services found");
+    printlnA("no services found");
   } else {
-    Serial.print(n);
-    Serial.println(" service(s) found");
+    printA(n);
+    printlnA(" service(s) found");
     for (int i = 0; i < n; ++i) {
       // Print details for each service found
-      Serial.print("  ");
-      Serial.print(i + 1);
-      Serial.print(": ");
-      Serial.print(MDNS.hostname(i));
-      Serial.print(" (");
-      Serial.print(MDNS.IP(i));
-      Serial.print(":");
-      Serial.print(MDNS.port(i));
-      Serial.println(")");
+      printA("  ");
+      printA(i + 1);
+      printA(": ");
+      printA(MDNS.hostname(i));
+      printA(" (");
+      printA(MDNS.IP(i));
+      printA(":");
+      printA(MDNS.port(i));
+      printlnA(")");
     }
   }
-  Serial.println();
+  printlnD();
 }
 
 void BrowseAllServices() {

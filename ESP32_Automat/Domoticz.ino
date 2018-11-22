@@ -1,29 +1,24 @@
 //--------------------------------------------------------------------
 void sendDomoticz(String url) {
-#if defined DEBUG
-  Serial.println(">Send data to Domoticz:");
-  Serial.print(">  connecting to ");
-  Serial.println(Configuration.domoticz.host);
-  Serial.print(">  Requesting URL: ");
-  Serial.println(url);
-#endif
+  printlnV(">Send data to Domoticz:");
+  printV(">  connecting to ");
+  printlnV(Configuration.domoticz.host);
+  printV(">  Requesting URL: ");
+  printlnV(url);
 //  http.begin(Configuration.domoticz.host, Configuration.domoticz.port, url);
 //  int httpCode = http.GET();
 //  if (httpCode) {
 //    if (httpCode == 200) {
 //      String payload = http.getString();
-//#if defined DEBUG
-//      Serial.println(">  Domoticz response =");
-//      Serial.println(payload);
-//#endif
+//      printlnD(">  Domoticz response =");
+//      printlnD(payload);
 //    }
 //  }
-#if defined DEBUG
-  Serial.println(">  closing connection");
-#endif
+  printlnV(">  closing connection");
   //  http.end();
 }
 
+//--------------------------------------------------------------------
 void sendSvalueDomoticz(String svalue, int idx) {
   String url;
   url = "/json.htm?type=command&param=udevice&idx="; //username=MkE=&password=OVM=&
@@ -36,6 +31,7 @@ void sendSvalueDomoticz(String svalue, int idx) {
   sendDomoticz(url);
 }
 
+//--------------------------------------------------------------------
 void sendSwitchCmdDomoticz(String switchcmd, int idx) {
   String url;
   url = "/json.htm?type=command&param=switchlight&idx=";

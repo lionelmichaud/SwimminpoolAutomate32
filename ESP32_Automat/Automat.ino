@@ -57,16 +57,12 @@ boolean LongPeriodOfLowAirTemp ()
 //------------------------------------------------------------------------------------------------
 void MeasurePeriodOfCold()
 {
-#if defined DEBUG
-  Serial.println("-------------------------------- -TIMER CALLBACK------------------------------ -");
-  Serial.print(F("Millis = "));    Serial.println(currentMillis);
-#endif
+  printlnV("-------------------------------- -TIMER CALLBACK------------------------------ -");
+  printV("Millis = "); printlnV(currentMillis);
   if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis()))
   {
     PeriodOfLowAirTemp = PeriodOfLowAirTemp + 1;
-#if defined DEBUG
-    Serial.print(F("Duration = "));    Serial.println(PeriodOfLowAirTemp);
-#endif
+    printV(F("Duration = "));    printlnV(PeriodOfLowAirTemp);
   }
   else
     PeriodOfLowAirTemp = 0;
@@ -218,10 +214,8 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
                   // PeriodOfLowAirTemp = 0; // Initilize counter of low air temp
                   timer.restartTimer(TimerColdID); // reset T0 du timer périodique
                   timer.enable(TimerColdID); // activer le timer périodique
-#if defined DEBUG
-                  Serial.println("---------------------------- -TIMER ENABLED AND STARTED !-------------------------- -");
-                  Serial.print(F("Millis = "));    Serial.println(currentMillis);
-#endif
+                  printlnD("---------------------------- -TIMER ENABLED AND STARTED !-------------------------- -");
+                  printD(F("Millis = "));    printlnD(currentMillis);
                 }
 #endif
               };
@@ -236,9 +230,7 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
                 theAutomatCmd.CommandState = CLOSE_CMD_ACTIVATED;
                 prevMillis = millis();
                 timer.disable(TimerColdID); // désactiver le timer périodique
-#if defined DEBUG
-                Serial.println("-------------------------------- -TIMER DISABLED !------------------------------ -");
-#endif
+                printlnD("-------------------------------- -TIMER DISABLED !------------------------------ -");
               }
 #else
               if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis()))

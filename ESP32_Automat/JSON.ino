@@ -42,7 +42,7 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
   // Open file for reading
   File configFile = SPIFFS.open(filename, "r");
   if (!configFile) {
-    Serial.println(F("Failed to open config file !"));
+    printlnA("Failed to open config file !");
     DisplayAlert("Failed to open config file");
     return false;
   }
@@ -59,13 +59,11 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
   // vérifier le bon décodage
   if (!root.success())
   {
-    Serial.println(F("Failed to read JSON config file, using default configuration"));
+    printlnA("Failed to read JSON config file, using default configuration");
     DisplayAlert("Failed to read config file");
     return false;
   }
-#if defined VERBOSE
   root_.prettyPrintTo(Serial);
-#endif
 
   // get RVB LED parameters
   Config.RedLEDtemp   = root["temperature LED rouge"] | 20;
@@ -90,13 +88,11 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
   // get Wi-Fi access point parameters
   Config.automat_pwd = root["access point password"] | "Levsmsa2";
 
-#if defined VERBOSE
-//  Serial.println(); Serial.print("flipOLED : "); Serial.println(Config.flipOLED);
-//  Serial.println("Temporisations : "); Serial.println(Config.intervalTemp); Serial.println(Config.timeoutOpenClose); Serial.println(Config.intervalWiFi);
-//  Serial.println("IDX : "); Serial.println(Config.domoticz.idxs.idx_waterTemp); Serial.println(Config.domoticz.idxs.idx_airTemp); Serial.println(Config.domoticz.idxs.idx_automate);
-//  Serial.println("AP password : "); Serial.println(Config.automat_pwd);
-  Serial.println("Networks configurations: ");
-#endif
+  //  Serial.println(); Serial.print("flipOLED : "); Serial.println(Config.flipOLED);
+  //  Serial.println("Temporisations : "); Serial.println(Config.intervalTemp); Serial.println(Config.timeoutOpenClose); Serial.println(Config.intervalWiFi);
+  //  Serial.println("IDX : "); Serial.println(Config.domoticz.idxs.idx_waterTemp); Serial.println(Config.domoticz.idxs.idx_airTemp); Serial.println(Config.domoticz.idxs.idx_automate);
+  //  Serial.println("AP password : "); Serial.println(Config.automat_pwd);
+  printlnA("Networks configurations: ");
   // Extract the wi-fi networks array
   JsonArray & NetArray = root_["networks"];
 
@@ -111,10 +107,8 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
     //    const char* password = elem["password"]; // "louannetvanessasontmessourisadorees"
     Config.WiFiNetworks[i].ssid = elem["ssid"].as<String>();
     Config.WiFiNetworks[i].password = elem["password"].as<String>();
-#if defined VERBOSE
-    Serial.print("  - SSID: "); Serial.print(Config.WiFiNetworks[i].ssid);
-    Serial.print("  PASSWORD: "); Serial.println(Config.WiFiNetworks[i].password);
-#endif
+    printA("  - SSID: "); printA(Config.WiFiNetworks[i].ssid);
+    printA("  PASSWORD: "); printlnA(Config.WiFiNetworks[i].password);
     i++;
   }
   // Close the file (File's destructor doesn't close the file)

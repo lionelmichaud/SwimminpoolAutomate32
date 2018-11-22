@@ -1,5 +1,6 @@
 void ResetOffsetPreferences();
 
+//--------------------------------------------------------------------
 static String getContentType(const String& path) {
   if (path.endsWith(".html")) return "text/html";
   else if (path.endsWith(".htm")) return "text/html";
@@ -25,6 +26,7 @@ static String getContentType(const String& path) {
   return "application/octet-stream";
 }
 
+//--------------------------------------------------------------------
 //bool handleFileRead(String path) { // send the SPIFFS file to the client (if it exists)
 //  Serial.println("handleFileRead: " + path);
 //  if (path.endsWith("/")) path += "index.html";         // If a folder is requested, send the index file
@@ -39,134 +41,139 @@ static String getContentType(const String& path) {
 //  return false;                                         // If the file doesn't exist, return false
 //}
 
+//--------------------------------------------------------------------
 // Replaces placeholder in the HTML file with their value
+//--------------------------------------------------------------------
 String processor(const String& var) {
-  Serial.print(var);
+  printV(var + " = ");
   if (var == "Software") {
     String substitute = SOFTWARE;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "Version") {
     String substitute = VERSION;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
-  else if (var == "FLASHCHIPSPEED") {
-    String substitute = String(ESP.getFlashChipSpeed() / 1000000);
-    Serial.println(substitute);
+  else if (var == "FLASHCHIP_SPEED") {
+    String substitute = String(ESP.getFlashChipSpeed() / 1000000) + " MHz";
+    printlnV(substitute);
+    return substitute;
+  }
+  else if (var == "FLASHCHIP_MODE") {
+    FlashMode_t ideMode = ESP.getFlashChipMode();
+    String substitute = String((ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN"));
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "AP_IP") {
     String substitute = the_AP_IP_String;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "AUTOMAT_SSID") {
     String substitute = String(Automat_ssid);
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "AP_MAC") {
     String substitute = WiFi.softAPmacAddress();
-    Serial.println(substitute);
-    return substitute;
-  }
-  else if (var == "AUTOMAT_SSID") {
-    String substitute = String(Automat_ssid);
-    Serial.println(substitute);
-    return substitute;
-  }
-  else if (var == "AP_MAC") {
-    String substitute = WiFi.softAPmacAddress();
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "ST_IP") {
     String substitute = the_IP_String;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "LOCAL_NAME") {
     String substitute = String(Local_Name);
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "ST_SSID") {
     String substitute = the_SSID;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "BEST_RSSI") {
     String substitute = String(bestRSSI);
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "ST_MAC") {
     String substitute = the_MAC_String;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "DATE_NTP") {
     String substitute = DateNTP;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "TIME_NTP") {
     String substitute = TimeNTP;
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
+  //---------------------------------------
+  // DEBUT PARTIE SPECIFIQUE
+  //---------------------------------------
   else if (var == "AIRTEMP") {
     String substitute = String(PoolState.AirTemp);
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "ErrorTempAir") {
-    String substitute = (PoolState.ErrorTempAir ? "*" : "");
-    Serial.println(substitute);
+    String substitute = (PoolState.ErrorTempAir ? "(err)" : "");
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "EAUTEMP") {
     String substitute = String(PoolState.WaterTemp);
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "ErrorTempEau") {
-    String substitute = (PoolState.ErrorTempWater ? "*" : "");
-    Serial.println(substitute);
+    String substitute = (PoolState.ErrorTempWater ? "(err)" : "");
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "CURRENT_MODE") {
     String substitute = CurrentModeString();
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "CURRENT_COVER_POSITION") {
     String substitute = CurrentCoverPositionString();
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "SEUIL_OUVRE") {
     String substitute = String(Seuil());
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "SEUIL_FERME") {
     String substitute = String(Seuil() - Hysteresis());
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "AIR_TEMP_OFFSET") {
     String substitute = String(AirTempOffset());
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
   else if (var == "WATER_TEMP_OFFSET") {
     String substitute = String(WaterTempOffset());
-    Serial.println(substitute);
+    printlnV(substitute);
     return substitute;
   }
+  //---------------------------------------
+  // FIN PARTIE SPECIFIQUE
+  //---------------------------------------
+
   return String();
 }
 
@@ -187,6 +194,8 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   message += "\n\nTime NTP:" + DateNTP + " / " + TimeNTP;
   message += "\n\nAccess point:";
   message += "\n   IP:   " + the_AP_IP_String;
+  message += "\n   SSID: " + String(Automat_ssid);
+  message += "\n   MAC:  " + WiFi.softAPmacAddress();
   message += "\n\nConnecte au reseau :";
   message += "\n   Local name: " + String(Local_Name) + ".local";
   message += "\n   SSID: " + the_SSID;
@@ -200,8 +209,8 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   if (PoolState.ErrorTempSensorInit1) {
     message += "\n   Capteur temperature 1 => ERREUR adress=" + String1wireAddress(Device1_Thermometer);
   }
-  message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg" + (PoolState.ErrorTempAir ? "*" : "");
-  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg" + (PoolState.ErrorTempWater ? "*" : "");
+  message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg" + (PoolState.ErrorTempAir ? "(err)" : "");
+  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg" + (PoolState.ErrorTempWater ? "(err)" : "");
   message += "\n   Mode automatique  = " + CurrentModeString();
   if (Automat_Mode.ErrorMode) {
     message += " => ERREUR";
@@ -231,7 +240,7 @@ void handleTextInfo(AsyncWebServerRequest *request) {
 void handleRestart_ESP(AsyncWebServerRequest *request) {
   String message = "Restarting the " + String(Local_Name) + "...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   restartFlag = true;
 }
 
@@ -239,7 +248,7 @@ void handleRestart_ESP(AsyncWebServerRequest *request) {
 void handleIDE_OTA(AsyncWebServerRequest *request) {
   String message = "Initialisation of software update server OTA via IDE...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   delay(1000);
   Start_WiFi_IDE_OTA();
 }
@@ -248,7 +257,7 @@ void handleIDE_OTA(AsyncWebServerRequest *request) {
 void handleSummerHour(AsyncWebServerRequest *request) {
   String message = "Passage à l'heure d'été...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   SetSummerHour(true);
 }
 
@@ -256,7 +265,7 @@ void handleSummerHour(AsyncWebServerRequest *request) {
 void handleWinterHour(AsyncWebServerRequest *request) {
   String message = "Passage à l'heure d'hiver...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   SetSummerHour(false);
 }
 
@@ -264,7 +273,7 @@ void handleWinterHour(AsyncWebServerRequest *request) {
 void handleResetOffsetTemp(AsyncWebServerRequest *request) {
   String message = "Reseting the Offsets Temp on the Arduino EEPROM...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   // reseter les offset de mesure températures air et eau
   ResetOffsetPreferences();
 }
@@ -273,7 +282,7 @@ void handleResetOffsetTemp(AsyncWebServerRequest *request) {
 void handleWaterPlus(AsyncWebServerRequest *request) {
   String message = "Offset eau +0.25 degre...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   // modifier l'offset de mesure de température
   SetWaterTempOffset(TEMPOFFSETINCREMENT);
 }
@@ -282,7 +291,7 @@ void handleWaterPlus(AsyncWebServerRequest *request) {
 void handleWaterMinus(AsyncWebServerRequest *request) {
   String message = "Offset eau -0.25 degre...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   // modifier l'offset de mesure de température
   SetWaterTempOffset(-TEMPOFFSETINCREMENT);
 }
@@ -291,7 +300,7 @@ void handleWaterMinus(AsyncWebServerRequest *request) {
 void handleAirPlus(AsyncWebServerRequest *request) {
   String message = "Offset air +0.25 degre...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   // modifier l'offset de mesure de température
   SetAirTempOffset(TEMPOFFSETINCREMENT);
 }
@@ -300,7 +309,7 @@ void handleAirPlus(AsyncWebServerRequest *request) {
 void handleAirMinus(AsyncWebServerRequest *request) {
   String message = "Offset air -0.25 degre...";
   request->send(200, "text/plain", message);
-  Serial.println(message);
+  printlnD(message);
   // modifier l'offset de mesure de température
   SetAirTempOffset(-TEMPOFFSETINCREMENT);
 }
@@ -370,10 +379,10 @@ void handleNotFound(AsyncWebServerRequest *request) {
 //-----------------------------------------------
 void StartWEBserver () {
   // Page WEB de Status
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/HomePage.html", String(), false, processor);
   });
-  
+
   // Page WEB d'Info textuelles
   server.on("/info", handleTextInfo);
 
@@ -481,8 +490,6 @@ void StartWEBserver () {
 
   // Start TCP (HTTP) server
   server.begin();
-#if defined VERBOSE
-  Serial.println("HTTP server started");
-#endif
+  printlnA("HTTP server started");
   DisplayOneMoreLine("HTTP server started", TEXT_ALIGN_LEFT);
 }
