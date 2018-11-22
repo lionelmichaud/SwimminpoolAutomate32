@@ -5,79 +5,73 @@ int DomoticzCycle = 1;
 //*****************************************
 void SendDataOverUSB ()
 {
-  Serial.println();
-  Serial.println(F("----------------------------------"));
-  Serial.println(F("*** TEMPERATURES ***"));
+  printlnD();
+  printlnD("----------------------------------");
+  printlnD("*** TEMPERATURES ***");
   if (PoolState.ErrorTempSensorInit) {
-    Serial.print(F("Error temp = "));
-    Serial.println(PoolState.ErrorTempSensorInit);
+    printD("Error temp = ");
+    printlnD(PoolState.ErrorTempSensorInit);
   };
   if (PoolState.ErrorTempSensorInit0) {
-    Serial.print(F("Error temp device 0 = "));
-    Serial.println(PoolState.ErrorTempSensorInit0);
+    printD("Error temp device 0 = ");
+    printlnD(PoolState.ErrorTempSensorInit0);
   };
   if (PoolState.ErrorTempSensorInit1) {
-    Serial.print(F("Error temp device 1 = "));
-    Serial.println(PoolState.ErrorTempSensorInit1);
+    printD("Error temp device 1 = ");
+    printlnD(PoolState.ErrorTempSensorInit1);
   };
-  Serial.print(F("Air       = "));
-  Serial.print(PoolState.AirTemp);
-  Serial.println(" °C");
-  Serial.print(F("Eau       = "));
-  Serial.print(PoolState.WaterTemp);
-  Serial.println(" °C");
+  printD("Air       = ");
+  printD(PoolState.AirTemp);
+  printlnD(" °C");
+  printD("Eau       = ");
+  printD(PoolState.WaterTemp);
+  printlnD(" °C");
 
-  Serial.println(F("*** ETAT ***"));
-  Serial.print(F("Mode commandé par la clé : "));
-  if (Automat_Mode.ModeState == MANUAL)
-    Serial.println(F("MANUEL"));
-  else
-    Serial.println(F("AUTOMATIQUE"));
-  if (Automat_Mode.ErrorMode)
-    Serial.println(F("ERREUR de MODE"));
-  Serial.print(F("Volet : DERNIERE COMMANDE = "));
+  printlnD("*** ETAT ***");
+  printD("Mode commandé par la clé : ");
+  if (Automat_Mode.ModeState == MANUAL) {
+    printlnD("MANUEL");
+  }
+  else {
+    printlnD("AUTOMATIQUE");
+  }
+  if (Automat_Mode.ErrorMode) printlnD("ERREUR de MODE");
+  printD("Volet : DERNIERE COMMANDE = ");
   switch (Automat_Cmd.CommandState) {
     case CLOSE_CMD_ACTIVATED:
-      Serial.println(F("FERMETURE"));
+      printlnD("FERMETURE");
       break;
     case OPEN_CMD_ACTIVATED:
-      Serial.println(F("OUVERTURE"));
+      printlnD("OUVERTURE");
       break;
     default:
       // statements
-      Serial.println(F("INDEFINI"));
+      printlnD("INDEFINI");
       break;
   }
   if (Automat_Cmd.ErrorCmd)
-    Serial.println(F("ERREUR de CMD"));
-  Serial.println();
+    printlnD("ERREUR de CMD");
+  printlnD();
 
-  Serial.println(F("*** PARAMETER ***"));
-  Serial.print(F("Temperature Air = Temperature Eau +"));
-  Serial.print(String(Seuil()));
-  Serial.print(F(" (ouverture) / "));
-  Serial.print(String(Seuil() - Hysteresis()));
-  Serial.print(F(" (fermeture)"));
-  Serial.println();
+  printlnD("*** PARAMETER ***");
+  printD("Temperature Air = Temperature Eau +");
+  printD(String(Seuil()));
+  printD(" (ouverture) / ");
+  printD(String(Seuil() - Hysteresis()));
+  printD(" (fermeture)");
+  printlnD();
 
-#if defined DEBUG
-  Serial.println(F("*** DEBUG ***"));
-  Serial.print(F("Entré Switch = "));
-  Serial.print(AutoSwitch == HIGH ? "HIGH / OUVERT / MANU" : "LOW / FERME / AUTO");
-  Serial.println();
-  Serial.print(F("Sortie LED auto = "));
-  Serial.print(AutoLED);
-  Serial.println();
-  Serial.print(F("Sortie LED temp = R="));
-  Serial.print(TempLEDred); Serial.print(" / V="); Serial.print(TempLEDgreen); Serial.print(" / B="); Serial.print(TempLEDblue);
-  Serial.println();
-  Serial.print(F("Sortie Relai 1  = "));
-  Serial.print(Relay1 == HIGH ? "HIGH / REPOS => La clé manuelle a le controle" : "LOW / ACTIF => L'automate a le controle");
-  Serial.println();
-  Serial.print(F("Sortie Relai 2  = "));
-  Serial.print(Relay2 == HIGH ? "HIGH / REPOS => Volet fermé" : "LOW / ACTIF => Volet ouvert");
-  Serial.println();
-#endif
+  printlnV("*** DEBUG ***");
+  printV("Entré Switch = "); printV(AutoSwitch == HIGH ? "HIGH / OUVERT / MANU" : "LOW / FERME / AUTO");
+  printlnV();
+  printV("Sortie LED auto = "); printV(AutoLED);
+  printlnV();
+  printV("Sortie LED temp = R="); printV(TempLEDred); printD(" / V="); printV(TempLEDgreen); printV(" / B="); printV(TempLEDblue);
+  printlnV();
+  printV("Sortie Relai 1  = "); printV(Relay1 == HIGH ? "HIGH / REPOS => La clé manuelle a le controle" : "LOW / ACTIF => L'automate a le controle");
+  printlnV();
+  printV("Sortie Relai 2  = "); printV(Relay2 == HIGH ? "HIGH / REPOS => Volet fermé" : "LOW / ACTIF => Volet ouvert");
+  printlnV();
 }
 
 //*****************************************
@@ -85,9 +79,8 @@ void SendDataOverUSB ()
 //*****************************************
 void SendDataToDomoticz ()
 {
-#if defined DEBUG
-  Serial.println(); Serial.print("Wi-Fi DomoticzCycle = "); Serial.println(DomoticzCycle);
-#endif
+  printlnV();
+  printV("Wi-Fi DomoticzCycle = "); printlnV(DomoticzCycle);
 
   switch (DomoticzCycle) {
     case 1:
@@ -96,10 +89,7 @@ void SendDataToDomoticz ()
       //----------------------------------------
       if (!PoolState.ErrorTempSensorInit) {
         sendSvalueDomoticz(String(PoolState.AirTemp), Configuration.domoticz.idxs.idx_airTemp);
-#if defined DEBUG
-        Serial.print(F(">> TempAir = "));
-        Serial.println(PoolState.AirTemp);
-#endif
+        printV(">> TempAir = "); printlnV(PoolState.AirTemp);
       }
       ++DomoticzCycle;
       break;
@@ -110,10 +100,7 @@ void SendDataToDomoticz ()
       //----------------------------------------
       if (!PoolState.ErrorTempSensorInit) {
         sendSvalueDomoticz(String(PoolState.WaterTemp), Configuration.domoticz.idxs.idx_waterTemp);
-#if defined DEBUG
-        Serial.print(F(">> TempEau = "));
-        Serial.println(PoolState.WaterTemp);
-#endif
+        printV(F(">> TempEau = ")); printlnV(PoolState.WaterTemp);
       }
       ++DomoticzCycle;
       break;
@@ -132,12 +119,12 @@ void SendDataToDomoticz ()
         default:
           break;
       }
-#if defined DEBUG
-      if (Automat_Mode.ModeState == MANUAL)
-        Serial.println(F(">> Automat = Off"));
-      else
-        Serial.println(F(">> Automat = On"));
-#endif
+      if (Automat_Mode.ModeState == MANUAL) {
+        printlnV(F(">> Automat = Off"));
+      }
+      else {
+        printlnV(F(">> Automat = On"));
+      }
       ++DomoticzCycle;
       break;
 
@@ -155,19 +142,17 @@ void SendDataToDomoticz ()
         default:
           break;
       }
-#if defined DEBUG
       switch (Automat_Cmd.CommandState) {
         case CLOSE_CMD_ACTIVATED:
-          Serial.println(F(">> Volet = Fermeture"));
+          printlnV(F(">> Volet = Fermeture"));
           break;
         case OPEN_CMD_ACTIVATED:
-          Serial.println(F(">> Volet = Ouverture"));
+          printlnV(F(">> Volet = Ouverture"));
           break;
         default:
-          Serial.println(F(">> Volet = Indefini"));
+          printlnV(F(">> Volet = Indefini"));
           break;
       }
-#endif
       ++DomoticzCycle;
       break;
 

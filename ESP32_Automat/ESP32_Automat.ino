@@ -1,8 +1,11 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.1.0
+//  Nouvelle page Web à onglet avec dernière version de Bootstrap 4.1.3
+//
 // VERSION 2.0.0
-//  Version 1.0.0 - Multi Core
+//  Version 1.0.0 + Multi Core
 //
 // VERSION 1.0.0
 //  Version complète et testée - Mono Core
@@ -26,11 +29,10 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.0.0"
+#define VERSION "2.1.0"
 
 #define DEBUG
 #define USB_OUTPUT
-#define VERBOSE // Infos de version et de connection WiFi
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
 #define PREFERENCES_OUTPUT
 //#define PREFERENCES_RESET
@@ -47,6 +49,32 @@
 #define ONE_WIRE_AIR_TEMP_DEVICE 1   // swap with device 0 if temperature does not correspond
 #define TEMPERATURE_PRECISION 11
 
+// SIMPLE DEBUG OPTIONS
+// Disable all debug ? Good to release builds (production)
+// as nothing of SerialDebug is compiled, zero overhead :-)
+// For it just uncomment the DEBUG_DISABLED
+//#define DEBUG_DISABLED true
+
+// Disable SerialDebug debugger ? No more commands and features as functions and globals
+// Uncomment this to disable it
+//#define DEBUG_DISABLE_DEBUGGER true
+
+// Debug TAG ?
+// Usefull with debug any modules
+// For it, each module must have a TAG variable:
+//       const char* TAG = "...";
+// Uncomment this to enable it
+//#define DEBUG_USE_TAG true
+
+// Define the initial debug level here (uncomment to do it)
+#define DEBUG_INITIAL_LEVEL DEBUG_LEVEL_VERBOSE
+
+// Force debug messages to can use flash ) ?
+// Disable native Serial.printf (if have)
+// Good for low memory, due use flash, but more slow and not use macros
+//#define DEBUG_USE_FLASH_F true
+
+
 //-------------------------------------------------
 //   INCLUSION
 //-------------------------------------------------
@@ -57,7 +85,6 @@
 #include "NTPClient.h"
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-//#include <WebServer.h>
 #include <WiFiUdp.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
@@ -79,6 +106,7 @@
 #include "images.h"
 #include "OLEDDisplayUi.h"
 #include <DallasTemperature.h>
+#include <SerialDebug.h>
 
 //------------------------------------------------
 // --- TASKS HANDLER DECLARATIONS (DUAL-CORE)  ---
@@ -287,6 +315,7 @@ Preferences preferences;
 //--------------------------------------------------
 // functions prototypes
 //--------------------------------------------------
+void InitializeIO();
 boolean StartWiFiSoftAP(Configuration_T Config);
 boolean ConnectToWiFi(Configuration_T Config);
 void initializeOLED(Configuration_T Config);
@@ -343,6 +372,10 @@ int frameCount = 4;
 OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
 
+// Include SerialDebug
+#include "SerialDebug.h" //https://github.com/JoaoLopesF/SerialDebug
+
+
 //--------------------------------------------------------------------
 // SETUP
 //--------------------------------------------------------------------
@@ -357,7 +390,7 @@ void setup() {
   // INITIALIZE SPIFF LIBRARY
   //------------------------------------------
   while (!SPIFFS.begin()) {
-    Serial.println(F("Failed SPIFF initialization"));
+    printlnA("Failed SPIFF initialization");
     DisplayAlert("Failed to initialize SPIFF library !");
   }
 
@@ -365,21 +398,19 @@ void setup() {
   // READ JSON CONFIGURATION FILE IN SPIFF
   //------------------------------------------
   // Should load default config if run for the first time
-  Serial.println(F("Loading configuration file in SPIFF..."));
+  printlnA("Loading configuration file in SPIFF...");
   PoolState.ErrorConfig = !ReadConfig(ConfigFilename, Configuration);
 
   // reserve n bytes for the Strings: to avoid dynamic realocations
   inputString.reserve(200);
 
-#if defined VERBOSE
-  Serial.println("");
-  Serial.println(F("--------------------------"));
-  Serial.println(F("  ESP01 is booting "));
-  Serial.println(F("--------------------------"));
-  Serial.print(F("  VERSION = ")); Serial.println(VERSION);
-  Serial.println(F("  I was compiled " __DATE__ ));
-  Serial.println(F("--------------------------"));
-#endif
+  printlnA("");
+  printlnA("--------------------------");
+  printlnA("  ESP01 is booting ");
+  printlnA("--------------------------");
+  printA("  VERSION = "); printlnA(VERSION);
+  printlnA("  I was compiled " __DATE__ );
+  printlnA("--------------------------");
 
   //------------------------------------------
   // reset / dump application preferences
@@ -396,38 +427,9 @@ void setup() {
   DumpPreferences();
 
   //-------------------------------
-  // initialize ports
+  // initialize IO ports
   //-------------------------------
-  Serial.println(F("Initializing I/O..."));
-  // inputs
-  //    pinMode(pIntTempR, INPUT);
-  pinMode(pAutoSwitch, INPUT_PULLUP);
-  // outputs
-  pinMode(pAutoLED, OUTPUT);
-  pinMode(pTempLEDred, OUTPUT);
-  pinMode(pTempLEDgreen, OUTPUT);
-  pinMode(pTempLEDblue, OUTPUT);
-  pinMode(pRelay1, OUTPUT);
-  pinMode(pRelay2, OUTPUT);
-  //    open relays
-  digitalWrite(pRelay1, Relay1);
-  digitalWrite(pRelay2, Relay2);
-
-  //    switch off Auto LED
-  digitalWrite(pAutoLED, AutoLED);
-
-  //    configure LED PWM functionalitites
-  ledcSetup(cTempLEDred,   LEDfreq, LEDres);
-  ledcSetup(cTempLEDgreen, LEDfreq, LEDres);
-  ledcSetup(cTempLEDblue,  LEDfreq, LEDres);
-  //    attach the channel to the GPIO to be controlled
-  ledcAttachPin(pTempLEDred,   cTempLEDred);
-  ledcAttachPin(pTempLEDgreen, cTempLEDgreen);
-  ledcAttachPin(pTempLEDblue,  cTempLEDblue);
-  //    switch off Water Temperature LED color between red (cold) and green (hot):
-  ledcWrite(cTempLEDred, 0);
-  ledcWrite(cTempLEDgreen, 0);
-  ledcWrite(cTempLEDblue, 0);
+  InitializeIO();
 
   //-------------------------------
   // INITIALIZE 1WIRE BUS and OLED
@@ -443,18 +445,16 @@ void setup() {
   // INITIALISATION DES TIMERS
   //--------------------------------------------------------------------
   // initialize timer call-backs
-  Serial.print(F("Initialisation timer LED = "));
-  Serial.println(millis());
+  printA("Initialisation timer LED = ");
+  printlnA(millis());
   timer.setInterval(intervalLED, BlinkRedAutoLED);
 
-#if defined USB_OUTPUT
-  Serial.print(F("Initialisation timer USB = "));
-  Serial.println(millis());
+  printA("Initialisation timer USB = ");
+  printlnA(millis());
   timer.setInterval(intervalUSB, SendDataOverUSB);
-#endif
 
 #if defined CLOSURE_TEMPO
-  Serial.println(F("Initialisation timer période de refroidissement avant fermeture"));
+  printlnA("Initialisation timer période de refroidissement avant fermeture");
   TimerColdID = timer.setInterval(periodColdTimer, MeasurePeriodOfCold); // créer le timer
   timer.disable(TimerColdID); // désactiver le timer en attendant d'en avoir besoin
 #endif
@@ -487,21 +487,16 @@ void setup() {
   // DEMARRER LE CLIENT NTP
   //-------------------------
   timeClient.begin();
-  // décalage horrairer et reculer d'une heure en heure d'hiver
+  // décalage horaire et reculer d'une heure en heure d'hiver
   if (SummerHour()) timeClient.setTimeOffset(7200);
   else timeClient.setTimeOffset(3600);
-  //  int TimerNTP = timer.setInterval(interval_NTP_to_Arduino, Print_NTP_Date_Time);
-  //  timer.restartTimer(TimerNTP);
-  //#if defined VERBOSE
-  //  Serial.println(F(" > NTP client and timer started"));
-  //#endif
   delay(1000);
 
   //-------------------------------------------
   // Timer transmission Wi-Fi vers Domoticz
   //-------------------------------------------
-  Serial.print("Initialisation timer Wi-Fi = ");
-  Serial.println(millis());
+  printA("Initialisation timer Wi-Fi = ");
+  printlnA(millis());
   TimerWiFi = timer.setInterval(Configuration.intervalWiFi, SendDataToDomoticz);
   //timer.restartTimer(TimerWiFi);
 
@@ -517,13 +512,72 @@ void setup() {
     1,           /* priority of the task */
     &AutomatTask,      /* Task handle to keep track of created task */
     0);          /* pin task to core 0 */
-  Serial.println("Automat task created on core 0...");
+  printlnA("Automat task created on core 0...");
+
+#ifndef DEBUG_DISABLE_DEBUGGER
+
+  // Add Functions and global variables to SerialDebug
+
+  // Add functions that can called from SerialDebug
+
+  //debugAddFunctionVoid(F("function"), &function); // Example for function without args
+  //debugAddFunctionStr(F("function"), &function); // Example for function with one String arg
+  //debugAddFunctionInt(F("function"), &function); // Example for function with one int arg
+
+  // Add global variables that can showed/changed from SerialDebug
+  // Note: Only global, if pass local for SerialDebug, can be dangerous
+  debugAddGlobalInt("TimerColdID", &TimerColdID);
+  debugAddGlobalInt(F("TimerWiFi"), &TimerWiFi);
+  debugAddGlobalInt(F("TimerTemp"), &TimerTemp);
+  debugAddGlobalULong(F("prevMillis"), &prevMillis);
+  debugAddGlobalULong(F("currentMillis"), &currentMillis);
+  debugAddGlobalInt(F("selectedWiFi"), &selectedWiFi);
+  debugAddGlobalInt(F("bestRSSI"), &bestRSSI);
+  debugAddGlobalInt(F("theRSSI"), &theRSSI);
+  debugAddGlobalString(F("the_IP_String"), &the_IP_String);
+  debugAddGlobalString(F("the_AP_IP_String"), &the_AP_IP_String);
+  debugAddGlobalString(F("the_MAC_String"), &the_MAC_String);
+  debugAddGlobalString(F("the_SSID"), &the_SSID);
+  debugAddGlobalString(F("the_password"), &the_password);
+  debugAddGlobalBoolean(F("stringComplete"), &stringComplete);
+  debugAddGlobalBoolean(F("restartFlag"), &restartFlag);
+  debugAddGlobalString(F("TimeNTP"), &TimeNTP);
+  debugAddGlobalString(F("DateNTP"), &DateNTP);
+  debugAddGlobalInt(F("Ypos"), &Ypos);
+  debugAddGlobalInt(F("AutoLED"), &AutoLED);
+  debugAddGlobalInt(F("AutoSwitch"), &AutoSwitch);
+  debugAddGlobalInt(F("AutoSwitchState"), &AutoSwitchState);
+  debugAddGlobalInt(F("TempLEDred"), &TempLEDred);
+  debugAddGlobalInt(F("TempLEDgreen"), &TempLEDgreen);
+  debugAddGlobalInt(F("TempLEDblue"), &TempLEDblue);
+  debugAddGlobalInt(F("Relay1"), &Relay1);
+  debugAddGlobalInt(F("Relay2"), &Relay2);
+  debugAddGlobalInt(F("PeriodOfLowAirTemp"), &PeriodOfLowAirTemp);
+  debugAddGlobalFloat(F("Temp"), &Temp);
+  debugAddGlobalString(F("inputString"), &inputString);
+  debugAddGlobalString(F("url"), &url);
+  debugAddGlobalBoolean(F("UnexpectedStringReceived"), &UnexpectedStringReceived);
+  debugAddGlobalString(F("UnexpectedString"), &UnexpectedString);
+  debugAddGlobalUInt8_t(F("DallasDeviceCount"), &DallasDeviceCount);
+  debugAddGlobalInt(F("frameCount"), &frameCount);
+  debugAddGlobalInt(F("overlaysCount"), &overlaysCount);
+
+#endif // DEBUG_DISABLE_DEBUGGER
+
 }
 
 //--------------------------------------------------------------------
 // LOOP (EXECUTES ON CORE 1 BY DEFAULT)
 //--------------------------------------------------------------------
 void loop() {
+
+  // SerialDebug handle
+  // Notes: if in inactive mode (until receive anything from serial),
+  // it show only messages of always or errors level type
+  // And the overhead during inactive mode is very low
+  // Only if not DEBUG_DISABLED
+  debugHandle();
+
   if (restartFlag) {
     preferences.end();
     ESP.restart();
@@ -533,6 +587,13 @@ void loop() {
   //  Executer les timers
   //-------------------------------------------------------
   timer.run();
+
+  // SerialDebug handle
+  // Notes: if in inactive mode (until receive anything from serial),
+  // it show only messages of always or errors level type
+  // And the overhead during inactive mode is very low
+  // Only if not DEBUG_DISABLED
+  debugHandle();
 
   int remainingTimeBudget = ui.update();
 
@@ -549,7 +610,7 @@ void loop() {
       char inChar = (char)Serial.read();
       // add it to the inputString:
       inputString += inChar;
-      // Serial.print(inChar);
+      // printV(inChar);
       // if the incoming character is a newline, set a flag
       // so the main loop can do something about it:
       if (inChar == '\n') {
@@ -566,7 +627,7 @@ void loop() {
       //---------------------------------------------------
       // SI LA CONNECTION EST PERDUE, TENTER DE LA RETABLIR
       //---------------------------------------------------
-      Serial.println(F(" > WiFi not connected !"));
+      printlnA(" > WiFi not connected !");
       ConnectToWiFi(Configuration);
 
     } else {
