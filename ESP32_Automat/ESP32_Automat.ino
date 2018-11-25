@@ -1,6 +1,9 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.1.1
+//  Finetuning
+//
 // VERSION 2.1.0
 //  Nouvelle page Web à onglet avec dernière version de Bootstrap 4.1.3
 //
@@ -31,7 +34,6 @@
 #define SOFTWARE "ESP32_POOL"
 #define VERSION "2.1.0"
 
-#define DEBUG
 #define USB_OUTPUT
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
 #define PREFERENCES_OUTPUT
@@ -78,19 +80,23 @@
 //-------------------------------------------------
 //   INCLUSION
 //-------------------------------------------------
+#include <SerialDebug.h>
 #include <FS.h>
 #include <SPIFFS.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include "NTPClient.h"
+#include "images.h"
+#include "OLEDDisplayUi.h"
+#include <SimpleTimer.h>
 #include <WiFi.h>
-#include <ESPAsyncWebServer.h>
 #include <WiFiUdp.h>
+#include <ESPAsyncWebServer.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <ArduinoOTA.h>
 #include <Update.h>
-#include <SimpleTimer.h>
+#include <DallasTemperature.h>
 #include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
 // or #include "SH1106Wire.h", legacy include: `#include "SH1106.h"`
@@ -103,10 +109,6 @@
 // #include "SSD1306Spi.h"
 // #include "SH1106SPi.h"
 // Include custom images
-#include "images.h"
-#include "OLEDDisplayUi.h"
-#include <DallasTemperature.h>
-#include <SerialDebug.h>
 
 //------------------------------------------------
 // --- TASKS HANDLER DECLARATIONS (DUAL-CORE)  ---
@@ -588,13 +590,6 @@ void loop() {
   //-------------------------------------------------------
   timer.run();
 
-  // SerialDebug handle
-  // Notes: if in inactive mode (until receive anything from serial),
-  // it show only messages of always or errors level type
-  // And the overhead during inactive mode is very low
-  // Only if not DEBUG_DISABLED
-  debugHandle();
-
   int remainingTimeBudget = ui.update();
 
   if (remainingTimeBudget > 0) {
@@ -627,7 +622,7 @@ void loop() {
       //---------------------------------------------------
       // SI LA CONNECTION EST PERDUE, TENTER DE LA RETABLIR
       //---------------------------------------------------
-      printlnA(" > WiFi not connected !");
+      printlnE(" > WiFi not connected !");
       ConnectToWiFi(Configuration);
 
     } else {
