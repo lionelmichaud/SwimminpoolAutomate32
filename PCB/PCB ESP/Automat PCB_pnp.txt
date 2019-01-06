@@ -1,0 +1,65 @@
+*Pick And Place List
+*Company=
+*Author=
+*eMail=
+*
+*Project=Automat PCB
+*Date=00:20:17
+*CreatedBy=Fritzing 0.9.3b.04.19.5c895d327c44a3114e5fcc9d8260daf0cbb52806
+*
+*
+*Coordinates in mm, always center of component
+*Origin 0/0=Lower left corner of PCB
+*Rotation in degree (0-360, math. pos.)
+*
+*No;Value;Package;X;Y;Rotation;Side;Name
+1;;THT;51.2104;-53.4388;-90;Bottom;J2
+2;;;74.4069;-23.7104;-90;Bottom;ESP32
+3;;;28.4775;-19.9108;0;Bottom;Via4
+4;;;25.42;-25.4612;0;Bottom;TXT25
+5;;;7.89253;-2.25773;0;Bottom;TXT24
+6;;;25.4034;-22.1338;0;Bottom;TXT25
+7;;;88.8806;-2.01157;0;Bottom;TXT21
+8;;;1.80745;-3.40084;0;Bottom;Hole4
+9;;THT;88.2944;-6.70284;90;Bottom;J3
+10;;;74.3386;-57.5405;0;Bottom;TXT25
+11;;;28.4775;-24.9908;0;Bottom;Via2
+12;;;76.7845;-57.5405;0;Bottom;TXT25
+13;10;THT;38.6374;-47.8508;90;Bottom;R14
+14;1mF;100 mil [THT, electrolytic];8.15745;-32.6579;0;Bottom;C1
+15;;THT;75.3404;-53.4388;-90;Bottom;J4
+16;;;97.0573;-56.7409;0;Bottom;Hole1
+17;;THT;24.5491;-53.4428;-90;Bottom;J13
+18;;;69.2586;-57.5405;0;Bottom;TXT25
+19;;;56.9182;-6.51751;0;Bottom;TXT25
+20;;THT;8.28445;-8.01988;90;Bottom;J11
+21;;;2.93634;-5.98788;0;Bottom;TXT25
+22;;300 mil [THT];11.9674;-19.9833;90;Bottom;D1
+23;;;23.4445;-57.3523;0;Bottom;TXT25
+24;;;84.2163;-57.6345;0;Bottom;TXT25
+25;;THT;38.7644;-6.70284;90;Bottom;J23
+26;3.3k;THT;38.6374;-28.8008;90;Bottom;R16
+27;;;28.5245;-57.3523;0;Bottom;TXT25
+28;;;97.0573;-3.40094;0;Bottom;Hole2
+29;;;65.5404;-15.8657;0;Bottom;TXT25
+30;;;16.9388;-57.5915;0;Bottom;TXT24
+31;22µF;100 mil [THT, electrolytic];5.61745;-49.1679;-180;Bottom;C3
+32;;;28.4775;-22.4508;0;Bottom;Via3
+33;;;6.88744;-40.2779;90;Bottom;TSR-1-2450
+34;;THT;26.0644;-6.70284;90;Bottom;J24
+35;;;44.2349;-6.45825;0;Bottom;TXT25
+36;100;THT;93.2474;-44.0408;90;Bottom;R17
+37;;;1.80745;-56.7408;0;Bottom;Hole3
+38;33;THT;43.7174;-40.2308;90;Bottom;R13
+39;;;48.7504;-11.9145;0;Bottom;TXT25
+40;;;66.4363;-57.5405;0;Bottom;TXT25
+41;;;89.4845;-57.5405;0;Bottom;TXT25
+42;;;71.7986;-57.5405;0;Bottom;TXT25
+43;;;63.8963;-49.5442;0;Bottom;TXT25
+44;;;61.1682;-49.5442;0;Bottom;TXT25
+45;;THT;51.4644;-6.70284;90;Bottom;J1
+46;2.2;THT;4.34745;-19.9579;-90;Bottom;R1
+47;;;25.326;-18.782;0;Bottom;TXT25
+48;;;13.7107;-5.39148;0;Bottom;TXT25
+49;;;50.2816;-48.3552;0;Bottom;TXT22
+50;;THT;69.2444;-6.70284;90;Bottom;J25
