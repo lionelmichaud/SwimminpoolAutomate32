@@ -2,7 +2,7 @@
 	"temperature LED rouge" : 20,
 	"temperature LED verte" : 27,
 	"flip OLED display" : true,
-	"temperature sampling period (s)" : 5,
+	"temperature sampling period (s)" : 10,
 	"cover open/close duration (s)" : 145,
 	"wi-fi transmission period (s)" :  60,
 	"domoticz IP" : "192.168.1.23",
