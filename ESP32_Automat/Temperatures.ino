@@ -53,6 +53,21 @@ void InitTemperatureSensors(Configuration_T Config) {
     PoolState.ErrorTempSensorInit = true;
   }
 
+  if (DallasSensors.getAddress(Device2_Thermometer, 2)) {
+    printA ("Device 2 address : ");
+    print1wireAddress(Device2_Thermometer);
+    printlnA ();
+    Display1wireAddress("Device 2: ", Device2_Thermometer);
+    delay (2000);
+  }
+  else {
+    printlnA(F("  Unable to find address for Device 2"));
+    delay (2000);
+    DisplayAlert("Unable to find address for Device 2");
+    PoolState.ErrorTempSensorInit2 = true;
+    //PoolState.ErrorTempSensorInit = true;
+  }
+
   // report parasite power requirements
   printA("Parasite power is : ");
   if (DallasSensors.isParasitePowerMode()) {
@@ -74,6 +89,10 @@ void InitTemperatureSensors(Configuration_T Config) {
   if (!PoolState.ErrorTempSensorInit1) {
     printA("Device 1 Resolution : ");
     printlnA(DallasSensors.getResolution(Device1_Thermometer));
+  }
+  if (!PoolState.ErrorTempSensorInit2) {
+    printA("Device 2 Resolution : ");
+    printlnA(DallasSensors.getResolution(Device2_Thermometer));
   }
 
   // Get the initial temperatures
