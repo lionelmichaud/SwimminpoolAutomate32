@@ -1,0 +1,76 @@
+*Pick And Place List
+*Company=
+*Author=
+*eMail=
+*
+*Project=Automat PCB v3 - Industrial
+*Date=00:33:00
+*CreatedBy=Fritzing 0.9.3b.04.19.5c895d327c44a3114e5fcc9d8260daf0cbb52806
+*
+*
+*Coordinates in mm, always center of component
+*Origin 0/0=Lower left corner of PCB
+*Rotation in degree (0-360, math. pos.)
+*
+*No;Value;Package;X;Y;Rotation;Side;Name
+1;;;26.6899;-28.907;0;Bottom;TXT26
+2;;;26.2196;-57.1292;0;Bottom;TXT26
+3;10;THT;40.2366;-48.6155;90;Bottom;R2
+4;;;47.6685;-1.53144;0;Bottom;TXT26
+5;;THT;88.6236;-6.19752;90;Bottom;J3
+6;;THT;51.5396;-51.6635;-90;Bottom;J2
+7;;;24.9966;-16.8655;0;Bottom;TXT26
+8;;THT;26.3936;-6.19752;90;Bottom;water
+9;;;3.40661;-2.89552;0;Bottom;Hole4
+10;2.2;THT;5.94661;-21.9455;-90;Bottom;R1
+11;1.25 – 36 V;to220-adj;31.3466;-43.853;0;Bottom;5v - 3.3v
+12;;;40.0886;-10.3038;0;Bottom;TXT26
+13;;;77.2076;-57.9925;-90;Bottom;TXT26
+14;;ptc;5.94661;-35.9155;90;Bottom;F1
+15;;THT;67.0336;-6.19752;90;Bottom;J5
+16;;;1.30658;-43.3944;90;Bottom;TXT26
+17;;;97.3865;-2.89561;0;Bottom;Hole2
+18;;;89.7362;-57.1292;-90;Bottom;TXT26
+19;;;34.4981;-47.3455;0;Bottom;TXT26
+20;;;31.3466;4.72448;0;Bottom;WaterTempSensor1
+21;3.3k;THT;37.6966;-25.7555;90;Bottom;R4
+22;;;88.692;-1.67255;0;Bottom;TXT26
+23;;;61.5916;-57.6937;-90;Bottom;TXT26
+24;;THT;36.5536;-6.19752;90;Bottom;air
+25;;;52.0682;-56.8;0;Bottom;TXT26
+26;;THT;47.9836;-6.19752;90;Bottom;J1
+27;;;29.6533;-10.4685;0;Bottom;TXT26
+28;;;36.5677;-16.3951;0;Bottom;TXT26
+29;22µF;100 mil [THT, electrolytic];5.94661;-51.1555;-90;Bottom;C3
+30;;;66.9535;-57.3174;-90;Bottom;TXT26
+31;;;31.4103;-19.4055;0;Bottom;TXT26
+32;;;72.2217;-57.2233;-90;Bottom;TXT26
+33;;;3.40661;-57.5055;0;Bottom;Hole3
+34;;;96.1166;-57.5055;0;Bottom;Hole1
+35;;THT;11.1536;-5.68952;90;Bottom;J7
+36;;;5.94661;-43.5355;90;Bottom;TSR-1-2450
+37;;;26.1255;-10.445;0;Bottom;TXT26
+38;;;69.682;-57.2233;-90;Bottom;TXT26
+39;;;31.5101;-39.9266;0;Bottom;TXT26
+40;;;11.7322;-43.4885;0;Bottom;TXT26
+41;;;74.7361;-23.2051;-90;Bottom;ESP32
+42;;;36.4639;-10.2568;0;Bottom;TXT26
+43;1mF;300 mil [THT, electrolytic];17.3766;-32.1055;0;Bottom;C1
+44;;;33.8063;-10.2333;0;Bottom;TXT26
+45;;;84.5454;-57.8044;-90;Bottom;TXT26
+46;;;74.5735;-57.7103;-90;Bottom;TXT26
+47;;;17.8904;-5.48255;0;Bottom;TXT26
+48;;;64.3197;-57.7103;-90;Bottom;TXT26
+49;;;23.1151;-10.1863;0;Bottom;TXT26
+50;;;18.6553;-57.1292;0;Bottom;TXT26
+51;;THT;22.3296;-52.9335;-90;Bottom;J6
+52;;THT;31.3466;-16.8655;-90;Bottom;J25
+53;;;3.82995;-5.76477;0;Bottom;TXT26
+54;;;28.007;-47.3455;0;Bottom;TXT26
+55;;THT;75.6696;-51.6635;-90;Bottom;J4
+56;;;50.8062;-1.56626;0;Bottom;TXT26
+57;;;97.3868;-2.89537;0;Bottom;Via5
+58;33;THT;44.0466;-40.9955;90;Bottom;R3
+59;100;THT;93.5766;-43.5355;90;Bottom;R5
+60;;300 mil [THT];13.5666;-18.1609;90;Bottom;D1
+61;;;43.9221;-1.62552;0;Bottom;TXT26

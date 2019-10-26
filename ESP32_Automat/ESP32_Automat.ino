@@ -35,7 +35,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.2.0"
+#define VERSION "2.2.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0"
 
 #define USB_OUTPUT
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage

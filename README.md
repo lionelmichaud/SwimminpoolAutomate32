@@ -14,5 +14,10 @@
 ##Environement
 * Compatible de: AsyncTCP v1.0.0 et ESP32 v1.0.0
 * Compiler avec:
-	* Arduino IDE 1.8.9 ou 1.8.10 ou PR-beta1.9-BUILD-107
+	* Arduino IDE 1.8.9 - 1.8.10 - PR-beta1.9-BUILD-107
 	* Utiliser Board ESP 1.0.0 (ESP32)
+* Télécharger avec 
+ 	* Arduino IDE 1.8.9 - 1.8.10 - PR-beta1.9-BUILD-107
+* Débuger (Serial Monitor) avec 
+ 	* Arduino IDE 1.8.9 - 1.8.10
+
