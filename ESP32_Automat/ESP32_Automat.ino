@@ -1,6 +1,10 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.2.1 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
+//  Introduction de variantes du nb de pages OLED (1 ou 4): #define DEBUG_OLED
+//  Mesure de la température interne
+//
 // VERSION 2.2.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
 //  Introduction de variantes en fonction de la taille du display OLED: #define OLED_096
 //
@@ -35,7 +39,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.2.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0"
+#define VERSION "2.2.1"
 
 #define USB_OUTPUT
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
@@ -46,6 +50,7 @@
 #define NTP_PERIOD 30000 // milisecondes
 #define TEMPOFFSETINCREMENT 0.25
 //#define OLED_096 // 0.96 else 1.30 inch
+#define DEBUG_OLED
 
 // USB serial line bitrate
 #define USBSERIAL_BITRATE 115200
@@ -230,6 +235,7 @@ struct Automat_Cmd_T {
 struct PoolState_T {
   float AirTemp       = -256.0;
   float WaterTemp     = -256.0;
+  float InternalTemp  = -256.0;
   boolean ErrorConfig = false;
   boolean ErrorTempSensorInit   = false; // erreur à l'initialisation de l'un des capteurs one wire
   boolean ErrorTempSensorInit0  = false; // erreur à l'initialisation du capteur one wire
@@ -378,12 +384,22 @@ void AutomatTaskCode( void * pvParameters );
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawPageSoftwareInfo, drawPageWiFi_AP_Info, drawPageWiFi_ST_Info,
+#if defined DEBUG_OLED
+FrameCallback frames[] = { drawPageSoftwareInfo,
+                           drawPageWiFi_AP_Info, 
+                           drawPageWiFi_ST_Info,
                            drawDeviceInfoTemperatures,
                            //drawDeviceInfoStatus
                          };
 // how many frames are there?
 int frameCount = 4;
+#else
+FrameCallback frames[] = { drawDeviceInfoTemperatures,
+                           //drawDeviceInfoStatus
+                         };
+// how many frames are there?
+int frameCount = 1;
+#endif
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };

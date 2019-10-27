@@ -77,9 +77,10 @@ void InitTemperatureSensors(Configuration_T Config) {
   }
 
   // set the resolution to N bit per device
-  //  DallasSensors.setResolution(Device0_Thermometer, TEMPERATURE_PRECISION);
-  //  DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
-  DallasSensors.setResolution(TEMPERATURE_PRECISION);
+  DallasSensors.setResolution(Device0_Thermometer, TEMPERATURE_PRECISION);
+  DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
+  DallasSensors.setResolution(Device2_Thermometer, TEMPERATURE_PRECISION);
+  //DallasSensors.setResolution(TEMPERATURE_PRECISION);
 
   delay (2000); // retarder l'init des thermistance
   if (!PoolState.ErrorTempSensorInit0) {
@@ -98,12 +99,18 @@ void InitTemperatureSensors(Configuration_T Config) {
   // Get the initial temperatures
   DallasSensors.requestTemperatures(); // Send the command to get temperature readings
   if (!PoolState.ErrorTempSensorInit) {
+    // Température de l'air
     PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
     printA("Air Temperature is : "); printlnA(PoolState.AirTemp);
     DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
+    // Température de l'eau
     PoolState.WaterTemp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
     printA("Eau Temperature is : "); printlnA(PoolState.WaterTemp);
     DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
+    // Température intérieure
+    PoolState.InternalTemp = DallasSensors.getTempCByIndex(ONE_WIRE_INTERNAL_TEMP_DEVICE);
+    printA("Internal Temperature is : "); printlnA(PoolState.InternalTemp);
+    //DisplayOneMoreLine("Temp Eau : " + String(PoolState.InternalTemp) + " °C", TEXT_ALIGN_LEFT);
   }
   // Timer sampling temperatures
   TimerTemp = timer.setInterval(Config.intervalTemp, SampleTemperatures);
@@ -208,8 +215,8 @@ void AcquireTemperatures()
     printW("Gros écart de température Eau: Eau Temp = ");
     printlnW(Temp);
   }
-  //  printD("Water Temperature is: ");
-  //  printlnD(PoolState.WaterTemp);
+  // température intérieure
+  PoolState.InternalTemp = DallasSensors.getTempCByIndex(ONE_WIRE_INTERNAL_TEMP_DEVICE);
 }
 
 //**********************************************
