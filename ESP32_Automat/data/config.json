@@ -11,14 +11,14 @@
 	"idx temperature air" : 49,
 	"idx automate mode"   : 50,
 	"idx position volet"  : 51,
-	"access point password" : "Levsmsa2",
+	"access point password" : "accessptpwd",
 	"networks": [
 		{
-			"ssid" : "Mon BWi-Fi",
+			"ssid" : "Mon Wi-Fi",
 			"password" : "louannetvanessasontmessourisadorees"
 		},
 		{
-			"ssid" : "Mon Wi-Fi",
+			"ssid" : "Mon BWi-Fi",
 			"password" : "louannetvanessasontmessourisadorees"
 		},
 		{

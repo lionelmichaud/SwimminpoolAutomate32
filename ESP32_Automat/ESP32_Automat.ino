@@ -1,6 +1,15 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.3.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
+//  Introduction de variantes du nb de pages OLED (2 ou 4): #define DEBUG_OLED
+//  Inhibition possible des transmissions à Domoticz: #define DOMOTICZ_TX
+//  Mesure de la température interne sur 3ième capteure 1wire Dallas
+//  Température affichée avec 1 digit
+//
+// VERSION 2.2.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
+//  Introduction de variantes en fonction de la taille du display OLED: #define OLED_096
+//
 // VERSION 2.1.1 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
 //  Finetuning
 //
@@ -32,7 +41,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.1.1"
+#define VERSION "2.3.0"
 
 #define USB_OUTPUT
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
@@ -42,13 +51,17 @@
 #define NTP_OFFSET 3600 // 3600 = 1h en hiver ; 7200 = 2h en été
 #define NTP_PERIOD 30000 // milisecondes
 #define TEMPOFFSETINCREMENT 0.25
+#define DOMOTICZ_TX // transmettre les valeurs à Domoticz
+//#define OLED_096 // 0.96 else 1.30 inch
+//#define DEBUG_OLED // 4 pages affichées (2 de + qu'en mode run)
 
 // USB serial line bitrate
 #define USBSERIAL_BITRATE 115200
 
 // Data wire is plugged into pin 7 on the Arduino
-#define ONE_WIRE_WATER_TEMP_DEVICE 0 // swap with device 1 if temperature does not correspond
-#define ONE_WIRE_AIR_TEMP_DEVICE 1   // swap with device 0 if temperature does not correspond
+#define ONE_WIRE_WATER_TEMP_DEVICE    0 // swap with device 1 if temperature does not correspond
+#define ONE_WIRE_AIR_TEMP_DEVICE      1 // swap with device 0 if temperature does not correspond
+#define ONE_WIRE_INTERNAL_TEMP_DEVICE 2 // swap with device 0 if temperature does not correspond
 #define TEMPERATURE_PRECISION 11
 
 // SIMPLE DEBUG OPTIONS
@@ -98,8 +111,14 @@
 #include <Update.h>
 #include <DallasTemperature.h>
 #include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
+
+#if defined OLED_096
 #include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
+#else
 // or #include "SH1106Wire.h", legacy include: `#include "SH1106.h"`
+#include "SH1106Wire.h"
+#endif
+
 // For a connection via I2C using brzo_i2c (must be installed) include
 // #include <brzo_i2c.h> // Only needed for Arduino 1.6.5 and earlier
 // #include "SSD1306Brzo.h"
@@ -219,10 +238,12 @@ struct Automat_Cmd_T {
 struct PoolState_T {
   float AirTemp       = -256.0;
   float WaterTemp     = -256.0;
+  float InternalTemp  = -256.0;
   boolean ErrorConfig = false;
   boolean ErrorTempSensorInit   = false; // erreur à l'initialisation de l'un des capteurs one wire
   boolean ErrorTempSensorInit0  = false; // erreur à l'initialisation du capteur one wire
   boolean ErrorTempSensorInit1  = false; // erreur à l'initialisation du capteur one wire
+  boolean ErrorTempSensorInit2  = false; // erreur à l'initialisation du capteur one wire
   boolean ErrorTempAir          = false; // température air mesurée invalide
   boolean ErrorTempWater        = false; // température air mesurée invalide
 };
@@ -244,9 +265,12 @@ HTTPClient http;
 // OLED display
 //   Initialize the OLED display using Wire library
 //   display(@, SDA, SCL)
+#if defined OLED_096
 SSD1306Wire  display(0x3c, pSDA, pSCL);
-// SH1106 display(0x3c, D3, D5);
+#else
+SH1106Wire display(0x3c, pSDA, pSCL);
 OLEDDisplayUi ui(&display);
+#endif
 // the timer object
 SimpleTimer timer;
 int TimerColdID;
@@ -309,7 +333,7 @@ DallasTemperature DallasSensors(&oneWire);
 uint8_t DallasDeviceCount;
 
 // arrays to hold device addresses
-DeviceAddress Device0_Thermometer, Device1_Thermometer;
+DeviceAddress Device0_Thermometer, Device1_Thermometer, Device2_Thermometer;
 
 // préférences de réglage de l'application
 Preferences preferences;
@@ -363,12 +387,25 @@ void AutomatTaskCode( void * pvParameters );
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
-FrameCallback frames[] = { drawPageSoftwareInfo, drawPageWiFi_AP_Info, drawPageWiFi_ST_Info,
+#if defined DEBUG_OLED
+FrameCallback frames[] = { drawPageSoftwareInfo,
+                           drawPageWiFi_AP_Info, 
+                           drawPageWiFi_ST_Info,
                            drawDeviceInfoTemperatures,
                            //drawDeviceInfoStatus
                          };
 // how many frames are there?
 int frameCount = 4;
+#else
+FrameCallback frames[] = { //drawPageSoftwareInfo,
+                           //drawPageWiFi_AP_Info, 
+                           drawPageWiFi_ST_Info,
+                           drawDeviceInfoTemperatures,
+                           //drawDeviceInfoStatus
+                         };
+// how many frames are there?
+int frameCount = 2;
+#endif
 
 // Overlays are statically drawn on top of a frame eg. a clock
 OverlayCallback overlays[] = { msOverlay };

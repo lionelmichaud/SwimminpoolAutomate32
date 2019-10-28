@@ -53,6 +53,21 @@ void InitTemperatureSensors(Configuration_T Config) {
     PoolState.ErrorTempSensorInit = true;
   }
 
+  if (DallasSensors.getAddress(Device2_Thermometer, 2)) {
+    printA ("Device 2 address : ");
+    print1wireAddress(Device2_Thermometer);
+    printlnA ();
+    Display1wireAddress("Device 2: ", Device2_Thermometer);
+    delay (2000);
+  }
+  else {
+    printlnA(F("  Unable to find address for Device 2"));
+    delay (2000);
+    DisplayAlert("Unable to find address for Device 2");
+    PoolState.ErrorTempSensorInit2 = true;
+    //PoolState.ErrorTempSensorInit = true;
+  }
+
   // report parasite power requirements
   printA("Parasite power is : ");
   if (DallasSensors.isParasitePowerMode()) {
@@ -62,9 +77,10 @@ void InitTemperatureSensors(Configuration_T Config) {
   }
 
   // set the resolution to N bit per device
-  //  DallasSensors.setResolution(Device0_Thermometer, TEMPERATURE_PRECISION);
-  //  DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
-  DallasSensors.setResolution(TEMPERATURE_PRECISION);
+  DallasSensors.setResolution(Device0_Thermometer, TEMPERATURE_PRECISION);
+  DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
+  DallasSensors.setResolution(Device2_Thermometer, TEMPERATURE_PRECISION);
+  //DallasSensors.setResolution(TEMPERATURE_PRECISION);
 
   delay (2000); // retarder l'init des thermistance
   if (!PoolState.ErrorTempSensorInit0) {
@@ -75,16 +91,26 @@ void InitTemperatureSensors(Configuration_T Config) {
     printA("Device 1 Resolution : ");
     printlnA(DallasSensors.getResolution(Device1_Thermometer));
   }
+  if (!PoolState.ErrorTempSensorInit2) {
+    printA("Device 2 Resolution : ");
+    printlnA(DallasSensors.getResolution(Device2_Thermometer));
+  }
 
   // Get the initial temperatures
   DallasSensors.requestTemperatures(); // Send the command to get temperature readings
   if (!PoolState.ErrorTempSensorInit) {
+    // Température de l'air
     PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
     printA("Air Temperature is : "); printlnA(PoolState.AirTemp);
     DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
+    // Température de l'eau
     PoolState.WaterTemp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
     printA("Eau Temperature is : "); printlnA(PoolState.WaterTemp);
     DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
+    // Température intérieure
+    PoolState.InternalTemp = DallasSensors.getTempCByIndex(ONE_WIRE_INTERNAL_TEMP_DEVICE);
+    printA("Internal Temperature is : "); printlnA(PoolState.InternalTemp);
+    //DisplayOneMoreLine("Temp Eau : " + String(PoolState.InternalTemp) + " °C", TEXT_ALIGN_LEFT);
   }
   // Timer sampling temperatures
   TimerTemp = timer.setInterval(Config.intervalTemp, SampleTemperatures);
@@ -189,8 +215,8 @@ void AcquireTemperatures()
     printW("Gros écart de température Eau: Eau Temp = ");
     printlnW(Temp);
   }
-  //  printD("Water Temperature is: ");
-  //  printlnD(PoolState.WaterTemp);
+  // température intérieure
+  PoolState.InternalTemp = DallasSensors.getTempCByIndex(ONE_WIRE_INTERNAL_TEMP_DEVICE);
 }
 
 //**********************************************

@@ -115,8 +115,8 @@ void drawDeviceInfoTemperatures(OLEDDisplay * display, OLEDDisplayUiState * stat
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_16);
 
-  display->drawString(64 + x, 14 + y,      "AIR : " + String(PoolState.AirTemp) + "°C" + (PoolState.ErrorTempAir ? "*" : ""));
-  display->drawString(64 + x, 14 + 20 + y, "EAU : " + String(PoolState.WaterTemp) + "°C" + (PoolState.ErrorTempWater ? "*" : ""));
+  display->drawString(64 + x, 14 + y,      "AIR : " + String(PoolState.AirTemp, 1) + "°C" + (PoolState.ErrorTempAir ? "*" : ""));
+  display->drawString(64 + x, 14 + 20 + y, "EAU : " + String(PoolState.WaterTemp, 1) + "°C" + (PoolState.ErrorTempWater ? "*" : ""));
 }
 
 void drawDeviceInfoStatus(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {

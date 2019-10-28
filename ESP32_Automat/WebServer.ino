@@ -121,7 +121,7 @@ String processor(const String& var) {
   // DEBUT PARTIE SPECIFIQUE
   //---------------------------------------
   else if (var == "AIRTEMP") {
-    String substitute = String(PoolState.AirTemp);
+    String substitute = String(PoolState.AirTemp, 1);
     printlnV(substitute);
     return substitute;
   }
@@ -131,7 +131,7 @@ String processor(const String& var) {
     return substitute;
   }
   else if (var == "EAUTEMP") {
-    String substitute = String(PoolState.WaterTemp);
+    String substitute = String(PoolState.WaterTemp, 1);
     printlnV(substitute);
     return substitute;
   }
