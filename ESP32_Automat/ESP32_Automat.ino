@@ -2,8 +2,10 @@
 // VERSIONS HISTORY
 //
 // VERSION 2.2.1 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
-//  Introduction de variantes du nb de pages OLED (1 ou 4): #define DEBUG_OLED
-//  Mesure de la température interne
+//  Introduction de variantes du nb de pages OLED (2 ou 4): #define DEBUG_OLED
+//  Inhibition possible des transmissions à Domoticz: #define DOMOTICZ_TX
+//  Mesure de la température interne sur 3ième capteure 1wire Dallas
+//  Température affichée avec 1 digit
 //
 // VERSION 2.2.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
 //  Introduction de variantes en fonction de la taille du display OLED: #define OLED_096
@@ -49,8 +51,9 @@
 #define NTP_OFFSET 3600 // 3600 = 1h en hiver ; 7200 = 2h en été
 #define NTP_PERIOD 30000 // milisecondes
 #define TEMPOFFSETINCREMENT 0.25
+#define DOMOTICZ_TX // transmettre les valeurs à Domoticz
 //#define OLED_096 // 0.96 else 1.30 inch
-#define DEBUG_OLED
+//#define DEBUG_OLED // 4 pages affichées (2 de + qu'en mode run)
 
 // USB serial line bitrate
 #define USBSERIAL_BITRATE 115200
@@ -394,11 +397,14 @@ FrameCallback frames[] = { drawPageSoftwareInfo,
 // how many frames are there?
 int frameCount = 4;
 #else
-FrameCallback frames[] = { drawDeviceInfoTemperatures,
+FrameCallback frames[] = { //drawPageSoftwareInfo,
+                           //drawPageWiFi_AP_Info, 
+                           drawPageWiFi_ST_Info,
+                           drawDeviceInfoTemperatures,
                            //drawDeviceInfoStatus
                          };
 // how many frames are there?
-int frameCount = 1;
+int frameCount = 2;
 #endif
 
 // Overlays are statically drawn on top of a frame eg. a clock

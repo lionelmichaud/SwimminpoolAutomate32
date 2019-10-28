@@ -1,21 +1,25 @@
 //--------------------------------------------------------------------
 void sendDomoticz(String url) {
+#if defined DOMOTICZ_TX
   printlnV(">Send data to Domoticz:");
   printV(">  connecting to ");
   printlnV(Configuration.domoticz.host);
   printV(">  Requesting URL: ");
   printlnV(url);
-//  http.begin(Configuration.domoticz.host, Configuration.domoticz.port, url);
-//  int httpCode = http.GET();
-//  if (httpCode) {
-//    if (httpCode == 200) {
-//      String payload = http.getString();
-//      printlnD(">  Domoticz response =");
-//      printlnD(payload);
-//    }
-//  }
+  http.begin(Configuration.domoticz.host, Configuration.domoticz.port, url);
+  int httpCode = http.GET();
+  if (httpCode) {
+    if (httpCode == 200) {
+      String payload = http.getString();
+      printlnD(">  Domoticz response =");
+      printlnD(payload);
+    }
+  }
   printlnV(">  closing connection");
-  //  http.end();
+  http.end();
+#else
+    printlnA("DOMOTICZ TRANSMISSION INHIBITED !!");
+#endif
 }
 
 //--------------------------------------------------------------------

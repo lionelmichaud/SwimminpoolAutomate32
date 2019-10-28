@@ -88,7 +88,7 @@ void SendDataToDomoticz ()
       // Transmettre Temperature Air à Domoticz
       //----------------------------------------
       if (!PoolState.ErrorTempSensorInit) {
-        sendSvalueDomoticz(String(PoolState.AirTemp), Configuration.domoticz.idxs.idx_airTemp);
+        sendSvalueDomoticz(String(PoolState.AirTemp, 1), Configuration.domoticz.idxs.idx_airTemp);
         printV(">> TempAir = "); printlnV(PoolState.AirTemp);
       }
       ++DomoticzCycle;
@@ -99,7 +99,7 @@ void SendDataToDomoticz ()
       // Transmettre Temperature Eau à Domoticz
       //----------------------------------------
       if (!PoolState.ErrorTempSensorInit) {
-        sendSvalueDomoticz(String(PoolState.WaterTemp), Configuration.domoticz.idxs.idx_waterTemp);
+        sendSvalueDomoticz(String(PoolState.WaterTemp, 1), Configuration.domoticz.idxs.idx_waterTemp);
         printV(F(">> TempEau = ")); printlnV(PoolState.WaterTemp);
       }
       ++DomoticzCycle;
