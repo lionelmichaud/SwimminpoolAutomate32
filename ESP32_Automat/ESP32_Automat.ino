@@ -1,7 +1,7 @@
 //
 // VERSIONS HISTORY
 //
-// VERSION 2.2.1 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
+// VERSION 2.3.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
 //  Introduction de variantes du nb de pages OLED (2 ou 4): #define DEBUG_OLED
 //  Inhibition possible des transmissions à Domoticz: #define DOMOTICZ_TX
 //  Mesure de la température interne sur 3ième capteure 1wire Dallas
@@ -41,7 +41,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.2.1"
+#define VERSION "2.3.0"
 
 #define USB_OUTPUT
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
