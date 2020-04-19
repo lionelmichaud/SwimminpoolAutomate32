@@ -56,7 +56,7 @@ void BlinkRedAutoLED ()
 
 //-------------------------------------------------
 // MANAGE RELAY : AUTOMATIC || MANUAL
-//  Relais au repos = HIGH
+//  !!!! Relais au repos = HIGH !!!!
 //-------------------------------------------------
 boolean SwitchRelayAutoManu (int State) {
   switch (State) {
@@ -81,7 +81,7 @@ boolean SwitchRelayAutoManu (int State) {
 
 //-------------------------------------------------
 // MANAGE RELAY : OPEN || CLOSE
-//  Relais au repos = HIGH
+//  !!!! Relais au repos = HIGH !!!!
 //-------------------------------------------------
 boolean SwitchRelayOpenCloseCover (int State) {
   switch (State) {

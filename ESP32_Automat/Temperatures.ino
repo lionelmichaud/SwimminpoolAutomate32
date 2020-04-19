@@ -100,15 +100,15 @@ void InitTemperatureSensors(Configuration_T Config) {
   DallasSensors.requestTemperatures(); // Send the command to get temperature readings
   if (!PoolState.ErrorTempSensorInit) {
     // Température de l'air
-    PoolState.AirTemp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
+    PoolState.AirTemp = DallasSensors.getTempCByIndex(AirTempDeviceID()) + AirTempOffset();
     printA("Air Temperature is : "); printlnA(PoolState.AirTemp);
     DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
     // Température de l'eau
-    PoolState.WaterTemp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
+    PoolState.WaterTemp = DallasSensors.getTempCByIndex(WaterTempDeviceID()) + WaterTempOffset();
     printA("Eau Temperature is : "); printlnA(PoolState.WaterTemp);
     DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
     // Température intérieure
-    PoolState.InternalTemp = DallasSensors.getTempCByIndex(ONE_WIRE_INTERNAL_TEMP_DEVICE);
+    PoolState.InternalTemp = DallasSensors.getTempCByIndex(InternalTempDeviceID());
     printA("Internal Temperature is : "); printlnA(PoolState.InternalTemp);
     //DisplayOneMoreLine("Temp Eau : " + String(PoolState.InternalTemp) + " °C", TEXT_ALIGN_LEFT);
   }
@@ -190,7 +190,7 @@ void AcquireTemperatures()
 {
   // read the value from the sensor: Air Temperature
   //AirTemp = TemperatureFrom3950NTC (pAirR) + TEMPOFFSETAIR;
-  Temp = DallasSensors.getTempCByIndex(ONE_WIRE_AIR_TEMP_DEVICE) + AirTempOffset();
+  Temp = DallasSensors.getTempCByIndex(AirTempDeviceID()) + AirTempOffset();
   if (abs(Temp - PoolState.AirTemp) < 10) {
     PoolState.AirTemp = Temp;
     PoolState.ErrorTempAir = false;
@@ -205,7 +205,7 @@ void AcquireTemperatures()
 
   // read the value from the sensor: Water Temperature
   //WaterTemp = TemperatureFrom3950NTC (pWaterR) + TEMPOFFSETWATER;
-  Temp = DallasSensors.getTempCByIndex(ONE_WIRE_WATER_TEMP_DEVICE) + WaterTempOffset();
+  Temp = DallasSensors.getTempCByIndex(WaterTempDeviceID()) + WaterTempOffset();
   if (abs(Temp - PoolState.WaterTemp) < 10) {
     PoolState.WaterTemp = Temp;
     PoolState.ErrorTempWater = false;
@@ -216,7 +216,7 @@ void AcquireTemperatures()
     printlnW(Temp);
   }
   // température intérieure
-  PoolState.InternalTemp = DallasSensors.getTempCByIndex(ONE_WIRE_INTERNAL_TEMP_DEVICE);
+  PoolState.InternalTemp = DallasSensors.getTempCByIndex(InternalTempDeviceID());
 }
 
 //**********************************************

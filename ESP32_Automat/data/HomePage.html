@@ -68,8 +68,7 @@
 							</ul>
 						</div>
 						<div class="tab-pane active" role="tabpanel" id="tab_State">
-							<p>
-							</p>
+							<p>	</p>
 							<p>
 								<button type="button" class="btn btn-info" >Date Heure NTP <span class="badge badge-light">%DATE_NTP% / %TIME_NTP%</span></button>
 							</p>
@@ -84,17 +83,26 @@
 								<a>Seuils : Temp Air = Temp Eau + <span class="badge badge-secondary">%SEUIL_OUVRE%</span> (ouvre) / <span class="badge badge-secondary">%SEUIL_FERME%</span> (ferme)</a>
 						</div>
 						<div class="tab-pane" role="tabpanel" id="tab_Cmd">
-							<p>
-							</p>
+							<p>	</p>
+							<h5 class='text-left text-danger' >Gestion matérielle et logicielle</h5>
 							<a href=/update_IDE  target=blank class='btn btn-danger btn-block'  >Mettre a jour via IDE OTA</a>
 							<a href=/update_WEB  target=blank class='btn btn-danger btn-block'  >Mettre a jour via WEB OTA</a>
+							<p>	</p>
+							<a href=/swap_air_eau     target=blank class='btn btn-danger btn-block' >Permutation des capteurs: Air <span class='badge badge-light'> %AIR_ID%</span> <=> Eau <span class='badge badge-light'> %EAU_ID%</span></a>
+							<a href=/swap_air_interne target=blank class='btn btn-danger btn-block' >Permutation des capteurs: Air <span class='badge badge-light'> %AIR_ID%</span> <=> Interne <span class='badge badge-light'> %INT_ID%</span></a>
+							<p>	</p>
 							<a href=/restart     target=blank class='btn btn-danger btn-block'  >Red&eacute;marrer ESP</a>
+							<p>	</p>
+							<h5 class='text-left text-success' >Plus d'information et de commandes</h5>
 							<a href=/info        target=blank class='btn btn-success btn-block' >Obtenir ces informations au format text</a>
+							<p>	</p>
+							<h5 class='text-left text-primary' >Gestion des Heures d'hiver et d'été</h5>
 							<a href=/heure_ete   target=blank class='btn btn-primary btn-block' >Heure &eacute;t&eacute;</a>
 							<a href=/heure_hiver target=blank class='btn btn-primary btn-block' >Heure hiver</a>
+							<p>	</p>
+							<h5 class='text-left text-primary' >Gestion des offset de mesure de températures</h5>
 							<a href=/reset_offs  target=blank class='btn btn-primary btn-block' >Reset des offsets temp&eacute;ratures</a>
-							<p>
-							</p>
+							<p>	</p>
 
 							<div class="row">
 								<div class="col-md-6">
