@@ -11,6 +11,30 @@
 //  float Hysteresis    = 2.0; // Fermeture volet si (AirTemp < WaterTemp + Seuil - Hysteresis)
 //  float OffsetAir     = 0.0;
 //  float OffsetEau     = 0.0;
+//  int AirTempDevice   = 0; // Numéro du device du capteur de température
+//  int WaterTempDevice = 1; // Numéro du device du capteur de température
+//  int IntTempDevice   = 2; // Numéro du device du capteur de température
+
+//-------------------------------------------------
+// DEFINIR L'IDENTIFIANT DES CAPTEURS DE TEMPERAURE
+//-------------------------------------------------
+void SetAirTempDeviceID(int deviceID) {
+  preferences.putInt("AirTempDevice", deviceID); // 15 characters
+
+  DumpPreferences();
+}
+
+void SetWaterTempDeviceID(int deviceID) {
+  preferences.putInt("WaterTempDevice", deviceID); // 15 characters
+
+  DumpPreferences();
+}
+
+void SetInternalTempDeviceID(int deviceID) {
+  preferences.putInt("IntTempDevice", deviceID); // 15 characters
+
+  DumpPreferences();
+}
 
 //------------------------------------------------
 // INCREMENT WATER TEMP OFFSET IN EEPROM MEMORY
@@ -85,6 +109,21 @@ float WaterTempOffset() {
   return preferences.getFloat("WaterOffset", 0.0);
 }
 
+//-------------------------------------------------
+int AirTempDeviceID() {
+  return preferences.getInt("AirTempDevice", 0);
+}
+
+//-------------------------------------------------
+int WaterTempDeviceID() {
+  return preferences.getInt("WaterTempDevice", 1);
+}
+
+//-------------------------------------------------
+int InternalTempDeviceID() {
+  return preferences.getInt("IntTempDevice", 2);
+}
+
 //------------------------------------------------
 // RESET TEMP OSSET IN EEPROM MEMORY
 //------------------------------------------------
@@ -152,6 +191,9 @@ void DumpPreferences() {
   printA("  - Hysteresis de déclench.  = "); printA(Hysteresis()); printlnA(" °C");
   printA("  - Offset température Eau   = "); printA(WaterTempOffset()); printlnA(" °C");
   printA("  - Offset température Air   = "); printA(AirTempOffset()); printlnA(" °C");
+  printA("  - Air      Temp Device ID  = "); printlnA(AirTempDeviceID());
+  printA("  - Water    Temp Device ID  = "); printlnA(WaterTempDeviceID());
+  printA("  - Internal Temp Device ID  = "); printlnA(InternalTempDeviceID());
   printlnA();
 }
 
@@ -160,7 +202,7 @@ void DumpPreferences() {
 //------------------------------------------------
 String StringPreferences() {
   String s;
-  s = "PREFERENCES:";
+  s = "Preferences:";
   s += "\n   - Heure d'ete              = " + String((SummerHour() ? "OUI" : "NON"));
   // SPECIFIQUE
   s += "\n   - Number of period of cold = " + String(NbPeriodCold());
@@ -168,5 +210,8 @@ String StringPreferences() {
   s += "\n   - Hysteresis de declench.  = " + String(Hysteresis()) + " degres";
   s += "\n   - Offset temperature Eau   = " + String(WaterTempOffset()) + " degres";
   s += "\n   - Offset temperature Air   = " + String(AirTempOffset()) + " degres";
+  s += "\n   - Air      Temp Device ID  = " + String(AirTempDeviceID());
+  s += "\n   - Water    Temp Device ID  = " + String(WaterTempDeviceID());
+  s += "\n   - Internal Temp Device ID  = " + String(InternalTempDeviceID());
   return s;
 }

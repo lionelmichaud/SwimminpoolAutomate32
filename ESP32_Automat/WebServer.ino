@@ -170,6 +170,21 @@ String processor(const String& var) {
     printlnV(substitute);
     return substitute;
   }
+  else if (var == "AIR_ID") {
+    String substitute = String(AirTempDeviceID());
+    printlnV(substitute);
+    return substitute;
+  }
+  else if (var == "EAU_ID") {
+    String substitute = String(WaterTempDeviceID());
+    printlnV(substitute);
+    return substitute;
+  }
+  else if (var == "INT_ID") {
+    String substitute = String(InternalTempDeviceID());
+    printlnV(substitute);
+    return substitute;
+  }
   //---------------------------------------
   // FIN PARTIE SPECIFIQUE
   //---------------------------------------
@@ -212,9 +227,11 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   if (PoolState.ErrorTempSensorInit2) {
     message += "\n   Capteur temperature 2 => ERREUR adress=" + String1wireAddress(Device2_Thermometer);
   }
-  message += "\n   Temperature air  = " + String(PoolState.AirTemp)      + " deg" + (PoolState.ErrorTempAir ? "(err)" : "")   + " <= device " + String(ONE_WIRE_AIR_TEMP_DEVICE);
-  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp)    + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device " + String(ONE_WIRE_WATER_TEMP_DEVICE);
-  message += "\n   Temperature int  = " + String(PoolState.InternalTemp) + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device " + String(ONE_WIRE_INTERNAL_TEMP_DEVICE);
+  message +=   "\n   -";
+  message += "\n   Temperature air  = " + String(PoolState.AirTemp)      + " deg" + (PoolState.ErrorTempAir ? "(err)" : "")   + " <= device D" + String(AirTempDeviceID());
+  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp)    + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device D" + String(WaterTempDeviceID());
+  message += "\n   Temperature int  = " + String(PoolState.InternalTemp) + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device D" + String(InternalTempDeviceID());
+  message +=   "\n   -";
   message += "\n   Mode automatique  = " + CurrentModeString();
   if (Automat_Mode.ErrorMode) {
     message += " => ERREUR";
@@ -223,18 +240,19 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   if (Automat_Cmd.ErrorCmd) {
     message += " => ERREUR";
   }
+  message +=   "\n   -";
   message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   message += "\n\nCommands: ";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";
   message += "\n   http://" + String(Local_Name) + ".local/update_WEB : mettre a jour le logiciel WEB OTA";
-  message += "\n   http://" + String(Local_Name) + ".local/restart    : red&eacute;marrer ESP";
+  message += "\n   http://" + String(Local_Name) + ".local/restart    : redemarrer ESP";
   message += "\n   http://" + String(Local_Name) + ".local/reset_offs : reset temp offsets";
-  message += "\n   http://" + String(Local_Name) + ".local/heure_ete  : heure &eacute;t&eacute;";
+  message += "\n   http://" + String(Local_Name) + ".local/heure_ete  : heure ete;";
   message += "\n   http://" + String(Local_Name) + ".local/heure_hiver: heure hiver";
-  message += "\n   http://" + String(Local_Name) + ".local/eau_plus   : offeset eau +0.25 degre";
-  message += "\n   http://" + String(Local_Name) + ".local/eau_moins  : offeset eau -0.25 degre";
-  message += "\n   http://" + String(Local_Name) + ".local/air_plus   : offeset air +0.25 degre";
-  message += "\n   http://" + String(Local_Name) + ".local/air_moins  : offeset air -0.25 degre";
+  message += "\n   http://" + String(Local_Name) + ".local/eau_plus   : offset eau +0.25 degre";
+  message += "\n   http://" + String(Local_Name) + ".local/eau_moins  : offset eau -0.25 degre";
+  message += "\n   http://" + String(Local_Name) + ".local/air_plus   : offset air +0.25 degre";
+  message += "\n   http://" + String(Local_Name) + ".local/air_moins  : offset air -0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/swap_air_eau     : permuter les sondes air et eau";
   message += "\n   http://" + String(Local_Name) + ".local/swap_air_interne : permuter les sondes air et interne";
   message += "\n";
@@ -323,22 +341,22 @@ void handleAirMinus(AsyncWebServerRequest *request) {
 
 //--------------------------------------------------------------------
 void handleSwapAirWater(AsyncWebServerRequest *request) {
-  String message = "Permutation des sondes 0 et 1...";
+  String message = "Permutation des sondes Air et Eau...";
   request->send(200, "text/plain", message);
   printlnD(message);
-  int temp = ONE_WIRE_WATER_TEMP_DEVICE;
-  ONE_WIRE_WATER_TEMP_DEVICE = ONE_WIRE_AIR_TEMP_DEVICE;
-  ONE_WIRE_AIR_TEMP_DEVICE   = temp;
+  int temp = WaterTempDeviceID(); //          Water => temp
+  SetWaterTempDeviceID(AirTempDeviceID()); // Air   => Water
+  SetAirTempDeviceID(temp); //                temp  => Air
 }
 
 //--------------------------------------------------------------------
 void handleSwapAirInternal(AsyncWebServerRequest *request) {
-  String message = "Permutation des sondes 0 et 2...";
+  String message = "Permutation des sondes Air et Interne...";
   request->send(200, "text/plain", message);
   printlnD(message);
-  int temp = ONE_WIRE_INTERNAL_TEMP_DEVICE;
-  ONE_WIRE_INTERNAL_TEMP_DEVICE = ONE_WIRE_AIR_TEMP_DEVICE;
-  ONE_WIRE_AIR_TEMP_DEVICE   = temp;
+  int temp = InternalTempDeviceID(); //          Internal => temp
+  SetInternalTempDeviceID(AirTempDeviceID()); // Air      => Internal
+  SetAirTempDeviceID(temp); //                   temp  => Air
 }
 
 //--------------------------------------------------------------------

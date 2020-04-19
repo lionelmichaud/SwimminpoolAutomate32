@@ -1,6 +1,9 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.3.2 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
+//  Inversion de la logique du swicth Maual / Automatique
+//
 // VERSION 2.3.1 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
 //  Inversion de l'affichage OLED (collé dans le boitier à l'envers) dans le fichier Config JSON
 //  Permutation des numéros de device par défaut des sondes de température 0, 1 et 2
@@ -48,7 +51,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.3.1"
+#define VERSION "2.3.2"
 
 #define USB_OUTPUT
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
@@ -65,10 +68,6 @@
 // USB serial line bitrate
 #define USBSERIAL_BITRATE 115200
 
-// Data wire is plugged into pin 7 on the Arduino
-int ONE_WIRE_WATER_TEMP_DEVICE    = 1; // #define ONE_WIRE_WATER_TEMP_DEVICE    1 // swap with device 1 if temperature does not correspond
-int ONE_WIRE_AIR_TEMP_DEVICE      = 2; // #define ONE_WIRE_AIR_TEMP_DEVICE      2 // swap with device 0 if temperature does not correspond
-int ONE_WIRE_INTERNAL_TEMP_DEVICE = 0; // #define ONE_WIRE_INTERNAL_TEMP_DEVICE 0 // swap with device 0 if temperature does not correspond
 #define TEMPERATURE_PRECISION 11
 
 // SIMPLE DEBUG OPTIONS
@@ -260,6 +259,9 @@ struct PoolState_T {
 //-------------------------------------------------
 // configuration du logiciel
 Configuration_T Configuration;
+
+// WEB variables
+// -------------
 // client NTP
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", NTP_OFFSET, NTP_PERIOD);
@@ -269,7 +271,9 @@ AsyncWebServer server(80);
 AsyncEventSource events("/events");
 // client HTTP
 HTTPClient http;
-// OLED display
+
+// OLED display variables
+// ----------------------
 //   Initialize the OLED display using Wire library
 //   display(@, SDA, SCL)
 #if defined OLED_096
@@ -278,14 +282,19 @@ SSD1306Wire  display(0x3c, pSDA, pSCL);
 SH1106Wire display(0x3c, pSDA, pSCL);
 OLEDDisplayUi ui(&display);
 #endif
+int Ypos = 0;
+
 // the timer object
+// ----------------
 SimpleTimer timer;
 int TimerColdID;
 int TimerWiFi;
 int TimerTemp;
 unsigned long prevMillis =  0; // (milliseconds)
 unsigned long currentMillis =  0; // (milliseconds)
+
 // Wi-Fi variables
+// ---------------
 IPAddress the_IP;
 IPAddress AP_IP;
 byte mac[6];
@@ -299,24 +308,35 @@ String the_SSID = "";            // a string to hold the SSID
 String the_password = "";        // a string to hold the password
 boolean stringComplete = false;  // whether the string is complete
 boolean restartFlag = false;     // whether to restart the module (http command
+
 // NTP variables
+// -------------
 String TimeNTP = "";
 String DateNTP = "";
-// OLED variables
-int Ypos = 0;
+
+// Temperature sensor devices variables
+// ------------------------------------
+// Data wire is plugged into pin 7 on the Arduino
+//int WaterTempDeviceID()    = 2; // #define WaterTempDeviceID()    1 // swap with device 1 if temperature does not correspond
+//int AirTempDeviceID()      = 0; // #define AirTempDeviceID()      2 // swap with device 0 if temperature does not correspond
+//int InternalTempDeviceID() = 1; // #define InternalTempDeviceID() 0 // swap with device 0 if temperature does not correspond
 
 // Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
+// ---------
 Automat_Mode_T Automat_Mode;
 
 // Automat 2 : Commande Volet roulant CLOSE_CMD_ACTIVATED || OPEN_CMD_ACTIVATED || UNDEF_CMD
+// ---------
 Automat_Cmd_T Automat_Cmd;
 
 // Etat de l'automate et de la piscine
+// -----------------------------------
 PoolState_T PoolState;
 
 // Variables
+// ---------
 int AutoLED =    LOW;
-int AutoSwitch = HIGH; // Manual = OUVERT = HIGH || Automatic = FERME  = LOW
+int AutoSwitch = LOW; // Automatic = OUVERT/HIGH || Manual = FERME/LOW
 int AutoSwitchState = MANUAL;
 int TempLEDred =   0;
 int TempLEDgreen = 0;
@@ -391,6 +411,10 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
 void SendDataToDomoticz ();
 boolean ReadConfig(const char *filename, Configuration_T& Config);
 void AutomatTaskCode( void * pvParameters );
+
+bool toggle (bool p) {
+  return (p ? false : true);
+}
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
@@ -706,9 +730,9 @@ void AutomatTaskCode( void * pvParameters ) {
     //-------------------------------------------------------
     // ACQUISITIONS OF INPUTS
     //-------------------------------------------------------
-    // read the value from the Mode switch: Automatic = FERME/LOW, Manual = OUVERT/HIGH
+    // read the value from the Mode switch: Manual = FERME/LOW, Automatic = OUVERT/HIGH
     AutoSwitch = digitalRead(pAutoSwitch);
-    if (AutoSwitch == LOW)
+    if (AutoSwitch == HIGH)
       AutoSwitchState = AUTOMATIC;
     else
       AutoSwitchState = MANUAL;

@@ -83,6 +83,7 @@ void drawPageSoftwareInfo(OLEDDisplay * display, OLEDDisplayUiState * state, int
   //display->drawString(0 + x, 30 + y, "Dallas devices : " + String(DallasDeviceCount));
   if (!PoolState.ErrorTempSensorInit0) display->drawString(0 + x, 30 + y, "D0: " + String1wireAddress(Device0_Thermometer));
   if (!PoolState.ErrorTempSensorInit1) display->drawString(0 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
+  if (!PoolState.ErrorTempSensorInit2) display->drawString(0 + x, 50 + y, "D2: " + String1wireAddress(Device2_Thermometer));
 }
 
 void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {
