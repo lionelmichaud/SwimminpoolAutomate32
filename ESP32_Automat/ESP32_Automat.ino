@@ -1,6 +1,13 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.3.1 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
+//  Inversion de l'affichage OLED (collé dans le boitier à l'envers) dans le fichier Config JSON
+//  Permutation des numéros de device par défaut des sondes de température 0, 1 et 2
+//  Ajout des print de température intérieure
+//  Ajout de 2 commandes HTTP de permutation des numéros de device des sondes de température (0 <=> 1 et 0 <=> 2)
+//  Correction de la gestion des offset de temp sonde par page Web
+//
 // VERSION 2.3.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
 //  Introduction de variantes du nb de pages OLED (2 ou 4): #define DEBUG_OLED
 //  Inhibition possible des transmissions à Domoticz: #define DOMOTICZ_TX
@@ -41,7 +48,7 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.3.0"
+#define VERSION "2.3.1"
 
 #define USB_OUTPUT
 #define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
@@ -59,9 +66,9 @@
 #define USBSERIAL_BITRATE 115200
 
 // Data wire is plugged into pin 7 on the Arduino
-#define ONE_WIRE_WATER_TEMP_DEVICE    0 // swap with device 1 if temperature does not correspond
-#define ONE_WIRE_AIR_TEMP_DEVICE      1 // swap with device 0 if temperature does not correspond
-#define ONE_WIRE_INTERNAL_TEMP_DEVICE 2 // swap with device 0 if temperature does not correspond
+int ONE_WIRE_WATER_TEMP_DEVICE    = 1; // #define ONE_WIRE_WATER_TEMP_DEVICE    1 // swap with device 1 if temperature does not correspond
+int ONE_WIRE_AIR_TEMP_DEVICE      = 2; // #define ONE_WIRE_AIR_TEMP_DEVICE      2 // swap with device 0 if temperature does not correspond
+int ONE_WIRE_INTERNAL_TEMP_DEVICE = 0; // #define ONE_WIRE_INTERNAL_TEMP_DEVICE 0 // swap with device 0 if temperature does not correspond
 #define TEMPERATURE_PRECISION 11
 
 // SIMPLE DEBUG OPTIONS

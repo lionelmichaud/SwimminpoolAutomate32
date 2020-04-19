@@ -9,22 +9,29 @@ void SendDataOverUSB ()
   printlnD("----------------------------------");
   printlnD("*** TEMPERATURES ***");
   if (PoolState.ErrorTempSensorInit) {
-    printD("Error temp = ");
+    printD("Error init temp = ");
     printlnD(PoolState.ErrorTempSensorInit);
   };
   if (PoolState.ErrorTempSensorInit0) {
-    printD("Error temp device 0 = ");
+    printD("Error init temp device 0 = ");
     printlnD(PoolState.ErrorTempSensorInit0);
   };
   if (PoolState.ErrorTempSensorInit1) {
-    printD("Error temp device 1 = ");
+    printD("Error init temp device 1 = ");
     printlnD(PoolState.ErrorTempSensorInit1);
+  };
+  if (PoolState.ErrorTempSensorInit2) {
+    printD("Error init temp device 2 = ");
+    printlnD(PoolState.ErrorTempSensorInit2);
   };
   printD("Air       = ");
   printD(PoolState.AirTemp);
   printlnD(" °C");
   printD("Eau       = ");
   printD(PoolState.WaterTemp);
+  printlnD(" °C");
+  printD("Interne   = ");
+  printD(PoolState.InternalTemp);
   printlnD(" °C");
 
   printlnD("*** ETAT ***");
