@@ -209,8 +209,12 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   if (PoolState.ErrorTempSensorInit1) {
     message += "\n   Capteur temperature 1 => ERREUR adress=" + String1wireAddress(Device1_Thermometer);
   }
-  message += "\n   Temperature air  = " + String(PoolState.AirTemp) + " deg" + (PoolState.ErrorTempAir ? "(err)" : "");
-  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp) + " deg" + (PoolState.ErrorTempWater ? "(err)" : "");
+  if (PoolState.ErrorTempSensorInit2) {
+    message += "\n   Capteur temperature 2 => ERREUR adress=" + String1wireAddress(Device2_Thermometer);
+  }
+  message += "\n   Temperature air  = " + String(PoolState.AirTemp)      + " deg" + (PoolState.ErrorTempAir ? "(err)" : "")   + " <= device " + String(ONE_WIRE_AIR_TEMP_DEVICE);
+  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp)    + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device " + String(ONE_WIRE_WATER_TEMP_DEVICE);
+  message += "\n   Temperature int  = " + String(PoolState.InternalTemp) + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device " + String(ONE_WIRE_INTERNAL_TEMP_DEVICE);
   message += "\n   Mode automatique  = " + CurrentModeString();
   if (Automat_Mode.ErrorMode) {
     message += " => ERREUR";
@@ -231,7 +235,10 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   message += "\n   http://" + String(Local_Name) + ".local/eau_moins  : offeset eau -0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/air_plus   : offeset air +0.25 degre";
   message += "\n   http://" + String(Local_Name) + ".local/air_moins  : offeset air -0.25 degre";
+  message += "\n   http://" + String(Local_Name) + ".local/swap_air_eau     : permuter les sondes air et eau";
+  message += "\n   http://" + String(Local_Name) + ".local/swap_air_interne : permuter les sondes air et interne";
   message += "\n";
+  message += "\n" + StringPreferences();
   //Serial.print(message);
   request->send(200, "text/plain", message);
 }
@@ -246,7 +253,7 @@ void handleRestart_ESP(AsyncWebServerRequest *request) {
 
 //--------------------------------------------------------------------
 void handleIDE_OTA(AsyncWebServerRequest *request) {
-  String message = "Initialisation of software update server OTA via IDE...";
+  String message = "Initialisation of software update server OTA via IDE...restart your Arduino IDE to connect...";
   request->send(200, "text/plain", message);
   printlnD(message);
   delay(1000);
@@ -312,6 +319,26 @@ void handleAirMinus(AsyncWebServerRequest *request) {
   printlnD(message);
   // modifier l'offset de mesure de température
   SetAirTempOffset(-TEMPOFFSETINCREMENT);
+}
+
+//--------------------------------------------------------------------
+void handleSwapAirWater(AsyncWebServerRequest *request) {
+  String message = "Permutation des sondes 0 et 1...";
+  request->send(200, "text/plain", message);
+  printlnD(message);
+  int temp = ONE_WIRE_WATER_TEMP_DEVICE;
+  ONE_WIRE_WATER_TEMP_DEVICE = ONE_WIRE_AIR_TEMP_DEVICE;
+  ONE_WIRE_AIR_TEMP_DEVICE   = temp;
+}
+
+//--------------------------------------------------------------------
+void handleSwapAirInternal(AsyncWebServerRequest *request) {
+  String message = "Permutation des sondes 0 et 2...";
+  request->send(200, "text/plain", message);
+  printlnD(message);
+  int temp = ONE_WIRE_INTERNAL_TEMP_DEVICE;
+  ONE_WIRE_INTERNAL_TEMP_DEVICE = ONE_WIRE_AIR_TEMP_DEVICE;
+  ONE_WIRE_AIR_TEMP_DEVICE   = temp;
 }
 
 //--------------------------------------------------------------------
@@ -484,6 +511,11 @@ void StartWEBserver () {
   server.on("/air_plus", handleAirPlus);
   // Page WEB de Incrément Hystérésis
   server.on("/air_moins", handleAirMinus);
+
+  // Page WEB de permutation des sondes de température Air et Eau
+  server.on("/swap_air_eau", handleSwapAirWater);
+  // Page WEB de permutation des sondes de température Air et Interne
+  server.on("/swap_air_interne", handleSwapAirInternal);
 
   // Page WEB d'erreur
   server.onNotFound(handleNotFound);

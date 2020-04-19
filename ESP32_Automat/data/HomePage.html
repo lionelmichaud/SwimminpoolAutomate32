@@ -29,10 +29,10 @@
 							<a class="nav-link" href="#tab_ESP" role="tab" data-toggle="pill" aria-controls="tab_ESP" aria-selected="false">ESP</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="#tab_AP" role="tab" data-toggle="pill" aria-controls="tab_AP" aria-selected="false">Wi-Fi Access Point</a>
+							<a class="nav-link" href="#tab_AP" role="tab" data-toggle="pill" aria-controls="tab_AP" aria-selected="false">Wi-Fi AP</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="#tab_ST" role="tab" data-toggle="pill" aria-controls="tab_ST" aria-selected="false">Wi-Fi Station</a>
+							<a class="nav-link" href="#tab_ST" role="tab" data-toggle="pill" aria-controls="tab_ST" aria-selected="false">Wi-Fi ST</a>
 						</li>
 						<li class="nav-item">
 							<a class="nav-link active" href="#tab_State" role="tab" data-toggle="pill" aria-controls="tab_State" aria-selected="true">Etat</a>
@@ -98,16 +98,26 @@
 
 							<div class="row">
 								<div class="col-md-6">
-									<h6 class='text-left text-primary'>Offset Temperature Air : %AIR_TEMP_OFFSET%</h6>
-					      			<button type="button" class="btn btn-primary btn-lg" href=/air_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></button>
-									<button type="button" class="btn btn-primary btn-lg" href=/air_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></button>
-									<p>
-									</p>
+									<h6 class='text-left text-primary' >Réglage de l'offset Temperature Air : %AIR_TEMP_OFFSET%</h6>
+									<div class="row">
+										<div class="col-md-6">
+							      			<a class="btn btn-primary btn-block" href=/air_moins target=blank  >- <span class='badge badge-light'>0.25 deg</span></a>
+										</div>
+										<div class="col-md-6">
+											<a class="btn btn-primary btn-block" href=/air_plus target=blank >+ <span class='badge badge-light'>0.25 deg</span></a>
+										</div>
+									</div>
 								</div>
 								<div class="col-md-6">
-									<h6 class='text-left text-primary'>Offset Temperature Eau : %WATER_TEMP_OFFSET%</h6>
-									<button type="button" class="btn btn-primary btn-lg" href=/eau_plus target=blank>+ <span class='badge badge-light'>0.25 deg</span></button>
-									<button type="button" class="btn btn-primary btn-lg" href=/eau_moins target=blank>- <span class='badge badge-light'>0.25 deg</span></button>
+									<h6 class='text-left text-primary'   >Réglage de l'offset Temperature Eau : %WATER_TEMP_OFFSET%</h6>
+									<div class="row">
+										<div class="col-md-6">
+											<a class="btn btn-primary btn-block" href=/eau_moins target=blank  >- <span class='badge badge-light'>0.25 deg</span></a>
+										</div>
+										<div class="col-md-6">
+											<a class="btn btn-primary btn-block" href=/eau_plus target=blank >+ <span class='badge badge-light'>0.25 deg</span></a>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>

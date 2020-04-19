@@ -154,3 +154,19 @@ void DumpPreferences() {
   printA("  - Offset température Air   = "); printA(AirTempOffset()); printlnA(" °C");
   printlnA();
 }
+
+//------------------------------------------------
+// Put ALL preferences into a String
+//------------------------------------------------
+String StringPreferences() {
+  String s;
+  s = "PREFERENCES:";
+  s += "\n   - Heure d'ete              = " + String((SummerHour() ? "OUI" : "NON"));
+  // SPECIFIQUE
+  s += "\n   - Number of period of cold = " + String(NbPeriodCold());
+  s += "\n   - Seuil de declenchement   = " + String(Seuil()) + " degres";
+  s += "\n   - Hysteresis de declench.  = " + String(Hysteresis()) + " degres";
+  s += "\n   - Offset temperature Eau   = " + String(WaterTempOffset()) + " degres";
+  s += "\n   - Offset temperature Air   = " + String(AirTempOffset()) + " degres";
+  return s;
+}

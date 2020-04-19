@@ -1,7 +1,7 @@
 {
 	"temperature LED rouge" : 20,
 	"temperature LED verte" : 27,
-	"flip OLED display" : true,
+	"flip OLED display" : false,
 	"temperature sampling period (s)" : 10,
 	"cover open/close duration (s)" : 145,
 	"wi-fi transmission period (s)" :  60,
@@ -19,7 +19,7 @@
 		},
 		{
 			"ssid" : "Mon BWi-Fi",
-			"password" : "louannetvanessasontmessourisadorees"
+			"password" : " "
 		},
 		{
 			"ssid" : "Pool",
@@ -30,8 +30,8 @@
 			"password" : "louannetvanessasontmessourisadorees"
 		},
 		{
-			"ssid" : "Garage",
-			"password" : "louannetvanessasontmessourisadorees"
+			"ssid" : "Inconnu",
+			"password" : " "
 		}
 	]
 }
