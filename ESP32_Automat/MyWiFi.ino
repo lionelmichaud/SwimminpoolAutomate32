@@ -4,9 +4,16 @@
 boolean StartWiFiSoftAP(Configuration_T Config) {
   printlnA("Wi-Fi access point starting...");
 
-  char ap_password[Config.automat_pwd.length() + 1];
-  Config.automat_pwd.toCharArray(ap_password, Config.automat_pwd.length() + 1); // récupère le param dans le tableau de char
-  boolean result = WiFi.softAP(Automat_ssid, ap_password); //WiFi.softAP(Automat_ssid, automat_pwd);
+  boolean result;
+  if (Config.automat_pwd.length() == 0) {
+    // Pas de mot de passe dans config.json → AP ouvert (dépannage uniquement)
+    printlnA("Wi-Fi AP: no password configured — starting open AP");
+    result = WiFi.softAP(Automat_ssid);
+  } else {
+    char ap_password[Config.automat_pwd.length() + 1];
+    Config.automat_pwd.toCharArray(ap_password, Config.automat_pwd.length() + 1);
+    result = WiFi.softAP(Automat_ssid, ap_password);
+  }
   delay(500);
 
   // clear the display
@@ -121,7 +128,7 @@ boolean Start_WiFi_IDE_OTA() {
 //   CHECK IF TH WIFI SSID IS ONE OF MINE
 //-----------------------------------------------
 boolean isMyWiFi(Configuration_T Configuration, String the_ssid) {
-  for (int j = 0; j < Configuration.nbWiFiNetworks - 1; ++j)
+  for (int j = 0; j < Configuration.nbWiFiNetworks; ++j)
     if (the_ssid == Configuration.WiFiNetworks[j].ssid) return true;
   return false;
 }
@@ -130,7 +137,7 @@ boolean isMyWiFi(Configuration_T Configuration, String the_ssid) {
 //   GET THE WIFI PASSWORD IF ITS ONE OF MINE
 //-----------------------------------------------
 String myWiFiPassword(Configuration_T Configuration, String the_ssid) {
-  for (int j = 0; j < Configuration.nbWiFiNetworks - 1; ++j)
+  for (int j = 0; j < Configuration.nbWiFiNetworks; ++j)
     if (the_ssid == Configuration.WiFiNetworks[j].ssid) return Configuration.WiFiNetworks[j].password;
   return "";
 }
@@ -200,6 +207,12 @@ boolean ConnectToWiFi(Configuration_T Config) {
       printA(theRSSI);
       printlnA(")");
       //printlnA((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
+    }
+    if (selectedWiFi < 0) {
+      printlnA("No known Wi-Fi network found.");
+      DisplayAlert("No known Wi-Fi found");
+      display.setFont(ArialMT_Plain_10);
+      return false;
     }
     char selected_ssid[WiFi.SSID(selectedWiFi).length() + 1]; // tableau de char de la taille du String param+1 (caractère de fin de ligne)
     WiFi.SSID(selectedWiFi).toCharArray(selected_ssid, WiFi.SSID(selectedWiFi).length() + 1); // récupère le param dans le tableau de char

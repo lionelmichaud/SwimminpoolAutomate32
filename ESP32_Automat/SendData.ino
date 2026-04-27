@@ -75,9 +75,9 @@ void SendDataOverUSB ()
   printlnV();
   printV("Sortie LED temp = R="); printV(TempLEDred); printD(" / V="); printV(TempLEDgreen); printV(" / B="); printV(TempLEDblue);
   printlnV();
-  printV("Sortie Relai 1  = "); printV(Relay1 == HIGH ? "HIGH / REPOS => La clé manuelle a le controle" : "LOW / ACTIF => L'automate a le controle");
+  printV("Sortie Relai 1  = "); printV(Relay1 == RELAY_OPEN ? "OPEN  / REPOS => La clé manuelle a le controle" : "CLOSED / ACTIF => L'automate a le controle");
   printlnV();
-  printV("Sortie Relai 2  = "); printV(Relay2 == HIGH ? "HIGH / REPOS => Volet fermé" : "LOW / ACTIF => Volet ouvert");
+  printV("Sortie Relai 2  = "); printV(Relay2 == RELAY_OPEN ? "OPEN  / REPOS => Volet fermé"                  : "CLOSED / ACTIF => Volet ouvert");
   printlnV();
 }
 

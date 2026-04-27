@@ -1,0 +1,21 @@
+{
+	"temperature LED rouge" : 20,
+	"temperature LED verte" : 27,
+	"flip OLED display" : false,
+	"temperature sampling period (s)" : 10,
+	"cover open/close duration (s)" : 145,
+	"wi-fi transmission period (s)" :  60,
+	"domoticz IP" : "192.168.1.x",
+	"domoticz port" : 8080,
+	"idx temperature eau" : 0,
+	"idx temperature air" : 0,
+	"idx automate mode"   : 0,
+	"idx position volet"  : 0,
+	"access point password" : "CHANGEME",
+	"networks": [
+		{
+			"ssid" : "Mon-WiFi",
+			"password" : "CHANGEME"
+		}
+	]
+}

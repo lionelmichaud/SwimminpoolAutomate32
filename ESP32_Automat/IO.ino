@@ -52,20 +52,20 @@ void BlinkRedAutoLED ()
 
 //-------------------------------------------------
 // MANAGE RELAY : AUTOMATIC || MANUAL
-//  !!!! Relais au repos = HIGH !!!!
+//  RELAY_OPEN (HIGH) = repos, RELAY_CLOSED (LOW) = actif
 //-------------------------------------------------
 boolean SwitchRelayAutoManu (int State) {
   switch (State) {
 
     case MANUAL :
       // ouvrir le Relay1 pour etre sur de se retrouver en command manuelle
-      Relay1 = HIGH; //  Relais au repos
+      Relay1 = RELAY_OPEN;
       digitalWrite(pRelay1, Relay1);
       return true;
 
     case AUTOMATIC :
       // fermer le Relay1 pour passer en automatique
-      Relay1 = LOW;
+      Relay1 = RELAY_CLOSED;
       digitalWrite(pRelay1, Relay1);
       return true;
 
@@ -77,20 +77,20 @@ boolean SwitchRelayAutoManu (int State) {
 
 //-------------------------------------------------
 // MANAGE RELAY : OPEN || CLOSE
-//  !!!! Relais au repos = HIGH !!!!
+//  RELAY_OPEN (HIGH) = repos, RELAY_CLOSED (LOW) = actif
 //-------------------------------------------------
 boolean SwitchRelayOpenCloseCover (int State) {
   switch (State) {
 
     case CLOSE_CMD_ACTIVATED :
       // ouvrir le Relay2 => Fermeture piscine
-      Relay2 = HIGH; //  Relais au repos
+      Relay2 = RELAY_OPEN;
       digitalWrite(pRelay2, Relay2);
       return true;
 
     case OPEN_CMD_ACTIVATED :
       // fermer le Relay2 => Ouverture piscine
-      Relay2 = LOW;
+      Relay2 = RELAY_CLOSED;
       digitalWrite(pRelay2, Relay2);
       return true;
 

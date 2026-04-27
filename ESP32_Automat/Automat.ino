@@ -58,12 +58,14 @@ void MeasurePeriodOfCold() {
   printlnV("-------------------------------- -TIMER CALLBACK------------------------------ -");
   printV("Millis = ");
   printlnV(currentMillis);
+  xSemaphoreTake(stateMutex, portMAX_DELAY);
   if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis())) {
     PeriodOfLowAirTemp = PeriodOfLowAirTemp + 1;
     printV(F("Duration = "));
     printlnV(PeriodOfLowAirTemp);
   } else
     PeriodOfLowAirTemp = 0;
+  xSemaphoreGive(stateMutex);
 }
 
 //------------------------------------------------------------------------------------------------

@@ -16,7 +16,9 @@ void parseString(String receivedString) {
 #endif
 
     if ((localFloat > 0.0) && (localFloat < 60.0)) {
+      xSemaphoreTake(stateMutex, portMAX_DELAY);
       PoolState.AirTemp = localFloat;
+      xSemaphoreGive(stateMutex);
       //      sendSvalueDomoticz(String(PoolState.AirTemp), String(idx_airTemp));
     }
   }
@@ -32,7 +34,9 @@ void parseString(String receivedString) {
 #endif
 
     if ((localFloat > 0.0) && (localFloat < 40.0)) {
+      xSemaphoreTake(stateMutex, portMAX_DELAY);
       PoolState.WaterTemp = localFloat;
+      xSemaphoreGive(stateMutex);
       //      sendSvalueDomoticz(String(PoolState.WaterTemp), String(idx_waterTemp));
     }
   }
@@ -47,6 +51,7 @@ void parseString(String receivedString) {
 #if defined ECHO
     Serial.print(">Automate = "); Serial.println(localString);
 #endif
+    xSemaphoreTake(stateMutex, portMAX_DELAY);
     if (localString.startsWith("On")) {
       Automat_Mode.ModeState = AUTOMATIC;
       //      sendSwitchCmdDomoticz(PoolState.AutomateString, String(idx_automate));
@@ -56,6 +61,7 @@ void parseString(String receivedString) {
       //      sendSwitchCmdDomoticz(PoolState.AutomateString, String(idx_automate));
 
     } else Automat_Mode.ModeState = UNDEF_MODE;
+    xSemaphoreGive(stateMutex);
   }
 
   //---------------------------
@@ -68,6 +74,7 @@ void parseString(String receivedString) {
 #if defined ECHO
     Serial.print(">Volet = "); Serial.println(localString);
 #endif
+    xSemaphoreTake(stateMutex, portMAX_DELAY);
     if (localString.startsWith("Ouverture")) {
       Automat_Cmd.CommandState = OPEN_CMD_ACTIVATED;
       //      sendSwitchCmdDomoticz("Off", String(idx_posVolet));
@@ -77,6 +84,7 @@ void parseString(String receivedString) {
       //      sendSwitchCmdDomoticz("On", String(idx_posVolet));
 
     } else Automat_Cmd.CommandState = UNDEF_CMD;
+    xSemaphoreGive(stateMutex);
   }
 
   //--------------------------------

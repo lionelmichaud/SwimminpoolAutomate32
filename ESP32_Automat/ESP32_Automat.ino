@@ -154,6 +154,7 @@
 // --- TASKS HANDLER DECLARATIONS (DUAL-CORE)  ---
 //------------------------------------------------
 TaskHandle_t AutomatTask;
+SemaphoreHandle_t stateMutex = NULL;
 
 //-------------------------------------------------
 // --- Déclaration des constantes globales ---
@@ -196,6 +197,10 @@ const int pDummy10 = 26;  // spare
 const int pDummy11 = 27;  // spare
 const int pRelay2 = 12;   // the number of the Relay2 pin
 const int pRelay1 = 14;   // the number of the Relay1 pin
+// Logique relais : bobine excitée = LOW (actif), bobine au repos = HIGH
+// Les relais utilisés sont à logique inversée (actif bas sur l'entrée de commande)
+const int RELAY_OPEN   = HIGH;  // bobine au repos — circuit libéré (manuel a le contrôle / volet fermé)
+const int RELAY_CLOSED = LOW;   // bobine excitée — circuit actif  (automatisme actif / volet ouvert)
 //const int pIntTempR =     A3; // the number of the IntTempR pin
 // set PWM parameters (ESP32 core v3: pas de numéro de canal explicite)
 const int LEDfreq = 5000;  // Hz
@@ -216,7 +221,7 @@ struct domoticz_T {              // configuration Domoticz
   int port = 8084;
   idx_T idxs;  // list of Domoticz idx
 };
-struct WiFiNetwok_T {
+struct WiFiNetwork_T {
   String ssid;
   String password;
 };
@@ -228,9 +233,9 @@ struct Configuration_T {
   unsigned long timeoutOpenClose = 145000;  // max duration of the opening or closure in mili-seconds (2minutes 25sec)
   unsigned long intervalWiFi = 60000;       // interval at which to send data over WiFi (milliseconds)
   domoticz_T domoticz;                      // Domoticz parameters
-  String automat_pwd = "Levsmsa2";
+  String automat_pwd = "";  // défini dans config.json → "access point password"
   int nbWiFiNetworks = -1;
-  WiFiNetwok_T* WiFiNetworks;  // list of Wi-Fi networks
+  WiFiNetwork_T* WiFiNetworks = nullptr;  // list of Wi-Fi networks
 };
 // Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
 const int MANUAL = 0;
@@ -351,8 +356,8 @@ int AutoSwitchState = MANUAL;
 int TempLEDred = 0;
 int TempLEDgreen = 0;
 int TempLEDblue = 0;
-int Relay1 = HIGH;           // Relais au repos (3.3V présent en entrée) => La clé manuelle a le controle : automatisme débrayé
-int Relay2 = HIGH;           // Relais au repos (3.3V présent en entrée) => Volet Fermé
+int Relay1 = RELAY_OPEN;     // Relais au repos (3.3V présent en entrée) => La clé manuelle a le controle : automatisme débrayé
+int Relay2 = RELAY_OPEN;     // Relais au repos (3.3V présent en entrée) => Volet Fermé
 int PeriodOfLowAirTemp = 0;  // compte le nombre de périodes 'periodColdTimer' pendant lesquelles la temp à été vue basse
 float Temp = 0.0;
 
@@ -406,6 +411,13 @@ float Seuil();
 float Hysteresis();
 float AirTempOffset();
 float WaterTempOffset();
+int  AirTempDeviceID();
+int  WaterTempDeviceID();
+int  InternalTempDeviceID();
+void SetAirTempDeviceID(int deviceID);
+void SetWaterTempDeviceID(int deviceID);
+void SetInternalTempDeviceID(int deviceID);
+String StringPreferences();
 void ResetPreferences();
 void DumpPreferences();
 void print1wireAddress(DeviceAddress deviceAddress);
@@ -446,8 +458,10 @@ void recoverI2C() {
   delay(10);
   Wire.begin(pSDA, pSCL);
   Wire.setTimeOut(3);  // timeout 3 ms
+  ui.init();           // reset UI state machine (frame position, animation) before hardware init
   display.init();
   if (Configuration.flipOLED) display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_10);
   printlnA("I2C recovery done.");
 }
 
@@ -524,10 +538,13 @@ void setup() {
   //------------------------------------------
   // reset / dump application preferences
   //------------------------------------------
-  // Open Preferences with my-app namespace. Each application module, library, etc
-  // has to use a namespace name to prevent key name collisions. We will open storage in
-  // RW-mode (second parameter has to be false).
-  // Note: Namespace name is limited to 15 chars.
+  // Ouvrir le namespace NVS une seule fois pour toute la session.
+  // Les fonctions de myPreferences.ino (getXxx/putXxx) sont appelées en continu
+  // depuis des timers et des handlers HTTP : garder le handle ouvert évite
+  // la latence de begin()/end() à chaque appel et est le pattern recommandé
+  // pour l'ESP32 quand les préférences sont accédées fréquemment.
+  // Le handle est libéré explicitement avant restart (voir handleRestart_ESP).
+  // Limite : 15 caractères pour le nom de namespace.
   preferences.begin("app-pref", false);
 #if defined PREFERENCES_RESET
   // initialize Preferences value
@@ -612,6 +629,8 @@ void setup() {
   //-----------------------------------------------------
   // --- Création des tâches concurrentes (dual-core) ---
   //-----------------------------------------------------
+  stateMutex = xSemaphoreCreateMutex();
+
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
     AutomatTaskCode, /* Task function. */
@@ -788,13 +807,15 @@ void AutomatTaskCode(void* pvParameters) {
     // SET OUTPUTS
     //-------------------------------------------------------
     // set the Water temp LED color as a function of Water temperature
+    xSemaphoreTake(stateMutex, portMAX_DELAY);
     DisplayWaterTemperatureOnLED(PoolState.WaterTemp, Configuration);
 
     //-------------------------------------------------------
     //  EXECUTE STATE MACHINES
     //-------------------------------------------------------
     AutomatRun(Configuration, Automat_Mode, Automat_Cmd, AutoSwitchState);
+    xSemaphoreGive(stateMutex);
 
-    delay(1000);
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }

@@ -196,7 +196,21 @@ String processor(const String& var) {
 //--------------------------------------------------------------------
 void handleTextInfo(AsyncWebServerRequest *request) {
   FlashMode_t ideMode = ESP.getFlashChipMode();
-  //  uint32_t chipId = ESP.getFlashChipId();
+
+  xSemaphoreTake(stateMutex, portMAX_DELAY);
+  bool  errSensor0   = PoolState.ErrorTempSensorInit0;
+  bool  errSensor1   = PoolState.ErrorTempSensorInit1;
+  bool  errSensor2   = PoolState.ErrorTempSensorInit2;
+  float airTemp      = PoolState.AirTemp;
+  float waterTemp    = PoolState.WaterTemp;
+  float internalTemp = PoolState.InternalTemp;
+  bool  errTempAir   = PoolState.ErrorTempAir;
+  bool  errTempWater = PoolState.ErrorTempWater;
+  int   modeState    = Automat_Mode.ModeState;
+  bool  errMode      = Automat_Mode.ErrorMode;
+  int   coverState   = Automat_Cmd.CommandState;
+  bool  errCmd       = Automat_Cmd.ErrorCmd;
+  xSemaphoreGive(stateMutex);
 
   String message = "Logiciel ESP: " + String(SOFTWARE);
   message += " - Version: " + String(VERSION);
@@ -218,26 +232,26 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   message += "\n   IP:   " + the_IP_String;
   message += "\n   MAC:  " + the_MAC_String;
   message += "\n\nStatus:";
-  if (PoolState.ErrorTempSensorInit0) {
+  if (errSensor0) {
     message += "\n   Capteur temperature 0 => ERREUR adress=" + String1wireAddress(Device0_Thermometer);
   }
-  if (PoolState.ErrorTempSensorInit1) {
+  if (errSensor1) {
     message += "\n   Capteur temperature 1 => ERREUR adress=" + String1wireAddress(Device1_Thermometer);
   }
-  if (PoolState.ErrorTempSensorInit2) {
+  if (errSensor2) {
     message += "\n   Capteur temperature 2 => ERREUR adress=" + String1wireAddress(Device2_Thermometer);
   }
   message +=   "\n   -";
-  message += "\n   Temperature air  = " + String(PoolState.AirTemp)      + " deg" + (PoolState.ErrorTempAir ? "(err)" : "")   + " <= device D" + String(AirTempDeviceID());
-  message += "\n   Temperature eau  = " + String(PoolState.WaterTemp)    + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device D" + String(WaterTempDeviceID());
-  message += "\n   Temperature int  = " + String(PoolState.InternalTemp) + " deg" + (PoolState.ErrorTempWater ? "(err)" : "") + " <= device D" + String(InternalTempDeviceID());
+  message += "\n   Temperature air  = " + String(airTemp)      + " deg" + (errTempAir   ? "(err)" : "") + " <= device D" + String(AirTempDeviceID());
+  message += "\n   Temperature eau  = " + String(waterTemp)    + " deg" + (errTempWater ? "(err)" : "") + " <= device D" + String(WaterTempDeviceID());
+  message += "\n   Temperature int  = " + String(internalTemp) + " deg" + (errTempWater ? "(err)" : "") + " <= device D" + String(InternalTempDeviceID());
   message +=   "\n   -";
-  message += "\n   Mode automatique  = " + CurrentModeString();
-  if (Automat_Mode.ErrorMode) {
+  message += "\n   Mode automatique  = " + String(modeState == AUTOMATIC ? "AUTOMATIQUE" : modeState == MANUAL ? "MANUEL" : "INCONNU");
+  if (errMode) {
     message += " => ERREUR";
   }
-  message += "\n   Position du Volet = " + CurrentCoverPositionString();
-  if (Automat_Cmd.ErrorCmd) {
+  message += "\n   Position du Volet = " + String(coverState == OPEN_CMD_ACTIVATED ? "OUVERT" : coverState == CLOSE_CMD_ACTIVATED ? "FERME" : "INCONNU");
+  if (errCmd) {
     message += " => ERREUR";
   }
   message +=   "\n   -";
@@ -363,12 +377,20 @@ void handleSwapAirInternal(AsyncWebServerRequest *request) {
 
 //--------------------------------------------------------------------
 void handleStatusJSON(AsyncWebServerRequest *request) {
+  xSemaphoreTake(stateMutex, portMAX_DELAY);
+  float waterTemp    = PoolState.WaterTemp;
+  float airTemp      = PoolState.AirTemp;
+  float internalTemp = PoolState.InternalTemp;
+  bool  isAutomatic  = (Automat_Mode.ModeState == AUTOMATIC);
+  bool  isOpen       = (Automat_Cmd.CommandState == OPEN_CMD_ACTIVATED);
+  xSemaphoreGive(stateMutex);
+
   JsonDocument doc;
-  doc["waterTemp"]    = serialized(String(PoolState.WaterTemp, 1));
-  doc["airTemp"]      = serialized(String(PoolState.AirTemp, 1));
-  doc["internalTemp"] = serialized(String(PoolState.InternalTemp, 1));
-  doc["mode"]         = (Automat_Mode.ModeState == AUTOMATIC) ? "automatique" : "manuel";
-  doc["cover"]        = (Automat_Cmd.CommandState == OPEN_CMD_ACTIVATED) ? "ouvert" : "ferme";
+  doc["waterTemp"]    = serialized(String(waterTemp, 1));
+  doc["airTemp"]      = serialized(String(airTemp, 1));
+  doc["internalTemp"] = serialized(String(internalTemp, 1));
+  doc["mode"]         = isAutomatic ? "automatique" : "manuel";
+  doc["cover"]        = isOpen      ? "ouvert"      : "ferme";
 
   String output;
   serializeJson(doc, output);

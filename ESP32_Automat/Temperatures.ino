@@ -211,6 +211,7 @@ float readTempRaw(int deviceIndex) {
     printlnW("1-Wire CRC error — retry");
     raw = DallasSensors.getTempCByIndex(deviceIndex);
   }
+  if (raw > 60.0f || raw < -10.0f) return DEVICE_DISCONNECTED_C;
   return raw;
 }
 
@@ -223,6 +224,7 @@ void AcquireTemperatures()
   // Température de l'air
   if (isSensorInitOK(AirTempDeviceID())) {
     Temp = readTempRaw(AirTempDeviceID()) + AirTempOffset();
+    xSemaphoreTake(stateMutex, portMAX_DELAY);
     if (abs(Temp - PoolState.AirTemp) < 10) {
       PoolState.AirTemp = Temp;
       PoolState.ErrorTempAir = false;
@@ -231,11 +233,13 @@ void AcquireTemperatures()
       printW("Gros écart de température Air: Air Temp = ");
       printlnW(Temp);
     }
+    xSemaphoreGive(stateMutex);
   }
 
   // Température de l'eau
   if (isSensorInitOK(WaterTempDeviceID())) {
     Temp = readTempRaw(WaterTempDeviceID()) + WaterTempOffset();
+    xSemaphoreTake(stateMutex, portMAX_DELAY);
     if (abs(Temp - PoolState.WaterTemp) < 10) {
       PoolState.WaterTemp = Temp;
       PoolState.ErrorTempWater = false;
@@ -244,11 +248,15 @@ void AcquireTemperatures()
       printW("Gros écart de température Eau: Eau Temp = ");
       printlnW(Temp);
     }
+    xSemaphoreGive(stateMutex);
   }
 
   // Température intérieure
   if (isSensorInitOK(InternalTempDeviceID())) {
-    PoolState.InternalTemp = readTempRaw(InternalTempDeviceID());
+    float internalTemp = readTempRaw(InternalTempDeviceID());
+    xSemaphoreTake(stateMutex, portMAX_DELAY);
+    PoolState.InternalTemp = internalTemp;
+    xSemaphoreGive(stateMutex);
   }
 }
 

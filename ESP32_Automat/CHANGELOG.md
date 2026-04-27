@@ -6,33 +6,22 @@ Toutes les modifications notables sont documentées dans ce fichier.
 
 ## [2.4.0] — 2026-04-27 (en cours)
 
-Compatible AsyncTCP v3.4.10 ·ESPAsyncWebServer v3.1.0 · ESP32 v3.3.8 · ESP8266 v3.1.2
+Compatible AsyncTCP v3.4.10 · ESPAsyncWebServer v3.1.0 · ESP32 v3.3.8 · ESP8266 v3.1.2
 
-### Fiabilisation des mesures de température Dallas (1-Wire)
+### Synchronisation FreeRTOS (dual-core)
 
-- Précision réduite de **11 → 10 bits** (`TEMPERATURE_PRECISION`) pour accélérer la conversion
-- Délai de mesure augmenté de **+100 ms** (`delaySamplingTemp`) pour laisser le temps aux capteurs
-- Nouvelle fonction **`readTempRaw(deviceIndex)`** : lit la température avec un retry automatique si la valeur retournée est -127 °C (erreur CRC 1-Wire) ou 85 °C (valeur de mise sous tension parasite)
-- Nouvelle fonction **`isSensorInitOK(deviceID)`** : vérifie si un capteur a été initialisé sans erreur avant de le lire
-- `setResolution()` conditionné à l'absence d'erreur d'init pour chaque capteur — évite d'envoyer une trame invalide qui perturberait les autres capteurs du bus
-- `SampleTemperatures()` : déclenchement de la lecture rendu **indépendant du flag global** `ErrorTempSensorInit` — les capteurs fonctionnels continuent d'être lus même si l'un d'eux a échoué à l'initialisation
-- `AcquireTemperatures()` et `InitTemperatureSensors()` : lectures conditionnées capteur par capteur via `isSensorInitOK()`
-- `InitTemperatureSensors()` : `delay(2000)` déplacé **après** `DisplayAlert()` (affichage d'abord, pause ensuite)
+- Nouveau mutex global **`stateMutex`** (`SemaphoreHandle_t`) créé dans `setup()` avant le lancement de `AutomatTaskCode`
+- `AutomatTaskCode` (Core 0) : `DisplayWaterTemperatureOnLED` + `AutomatRun` protégés par `xSemaphoreTake/Give(stateMutex)` — élimine les data races sur `PoolState`, `Automat_Mode`, `Automat_Cmd`
+- `delay(1000)` remplacé par `vTaskDelay(pdMS_TO_TICKS(1000))` — rend la main au scheduler au lieu de bloquer Core 0
+- `ParseString.ino` : 4 blocs d'écriture cross-core (`PoolState.AirTemp`, `.WaterTemp`, `Automat_Mode.ModeState`, `Automat_Cmd.CommandState`) protégés par mutex
+- `Temperatures.ino` (`AcquireTemperatures`) : écritures sur `PoolState` protégées par mutex ; `readTempRaw` (accès 1-Wire lent) exécuté hors mutex
+- `Automat.ino` (`MeasurePeriodOfCold`) : lectures de `PoolState` et écriture de `PeriodOfLowAirTemp` protégées par mutex
+- `WebServer.ino` : snapshot atomique de l'état partagé sous mutex dans `handleStatusJSON` et `handleTextInfo`
 
-### Robustesse du bus I2C
+### Wi-Fi
 
-- Bus I2C initialisé avec **timeout de 3 ms** (`Wire.setTimeOut(3)`) dans `initializeOLED()`
-- Nouvelle fonction **`recoverI2C()`** : récupération du bus I2C bloqué
-  - Envoie 9 impulsions d'horloge sur SCL pour libérer un SDA figé
-  - Réinitialise `Wire` et le display OLED
-  - Appelée automatiquement dans `loop()` si `ui.update()` retourne une valeur < -500
-
-### Affichage OLED
-
-- Fréquence OLED réduite de **25 fps → 20 fps**
-- Nouvelle frame **`drawWaterTemperatures()`** : affiche la température de l'eau en grand avec la police `Dialog_bold_32` (nouveau fichier `font.h`)
-- En mode non-debug : `drawDeviceInfoTemperatures` remplacée par `drawWaterTemperatures`
-- Remplacement des concaténations `String +` par `snprintf()` + buffer pour éviter les allocations dynamiques
+- `isMyWiFi()` et `myWiFiPassword()` : correction off-by-one (`< nbWiFiNetworks - 1` → `< nbWiFiNetworks`) — le dernier réseau configuré n'était jamais testé
+- `ConnectToWiFi()` : garde `if (selectedWiFi < 0) return false` avant `WiFi.SSID(selectedWiFi)` — évite un comportement indéfini (crash) si aucun réseau connu n'est dans la portée
 
 ### Domotique
 
@@ -46,14 +35,56 @@ Compatible AsyncTCP v3.4.10 ·ESPAsyncWebServer v3.1.0 · ESP32 v3.3.8 · ESP826
     "cover": "ouvert"
   }
   ```
-- Migration **ArduinoJson v5 → v7** dans `JSON.ino` (`StaticJsonBuffer` → `JsonDocument`, `parseObject` → `deserializeJson`)
+- Migration **ArduinoJson v5 → v7** (`StaticJsonBuffer` → `JsonDocument`, `parseObject` → `deserializeJson`)
 
-### Divers
+### Fiabilisation des mesures de température Dallas (1-Wire)
 
-- Période d'exécution de la task automate : **500 ms → 1 s** (`delay(1000)`)
+- Précision réduite de **11 → 10 bits** (`TEMPERATURE_PRECISION`) pour accélérer la conversion
+- Délai de mesure augmenté de **+100 ms** (`delaySamplingTemp`) pour laisser le temps aux capteurs de convertir
+- Nouvelle fonction **`readTempRaw(deviceIndex)`** : lecture avec retry automatique si la valeur retournée est -127 °C (erreur CRC) ou 85 °C (valeur de mise sous tension parasite)
+- Borne physique absolue dans `readTempRaw()` : toute valeur hors de `[-10 ; 60] °C` retourne `DEVICE_DISCONNECTED_C` — protège contre les valeurs corrompues mais numériquement plausibles qui passeraient le filtre delta
+- Nouvelle fonction **`isSensorInitOK(deviceID)`** : vérifie si un capteur a été initialisé sans erreur avant de le lire
+- `setResolution()` conditionné capteur par capteur via `isSensorInitOK()` — évite d'envoyer une trame invalide sur le bus 1-Wire
+- `SampleTemperatures()` : déclenchement rendu indépendant du flag global `ErrorTempSensorInit` — les capteurs fonctionnels sont toujours lus même si un autre a échoué à l'init
+- `AcquireTemperatures()` et `InitTemperatureSensors()` : lectures conditionnées capteur par capteur
+
+### Robustesse du bus I2C
+
+- Bus I2C initialisé avec **timeout de 3 ms** (`Wire.setTimeOut(3)`) dans `initializeOLED()`
+- Nouvelle fonction **`recoverI2C()`** : récupération du bus I2C bloqué par 9 impulsions d'horloge SCL, réinit `Wire` et display OLED — appelée automatiquement dans `loop()` si `ui.update()` retourne < -500
+- `recoverI2C()` : ajout de `ui.init()` avant `display.init()` pour réinitialiser l'état interne de `OLEDDisplayUi` (position de frame, animation) — sans ça, l'écran affiche du bruit graphique après récupération
+- `recoverI2C()` : ajout de `display.setFont(ArialMT_Plain_10)` pour restaurer la police par défaut effacée par le reset hardware
+
+### Affichage OLED
+
+- Fréquence OLED réduite de **25 fps → 20 fps**
+- Nouvelle frame **`drawWaterTemperatures()`** : affiche la température de l'eau en grand avec la police `Dialog_bold_32` (nouveau fichier `font.h`)
+- En mode non-debug : `drawDeviceInfoTemperatures` remplacée par `drawWaterTemperatures`
+- Remplacement des concaténations `String +` par `snprintf()` + buffer pour éviter les allocations dynamiques
+
+### Logique relais
+
+- Ajout des constantes `RELAY_OPEN = HIGH` et `RELAY_CLOSED = LOW` — les relais sont à logique inversée (bobine au repos = HIGH, bobine excitée = LOW)
+- `IO.ino` : `SwitchRelayAutoManu()` et `SwitchRelayOpenCloseCover()` utilisent les nouvelles constantes — plus de `HIGH`/`LOW` nus sur les sorties relais
+- `SendData.ino` : comparaisons `== HIGH` remplacées par `== RELAY_OPEN`
+- Valeurs initiales de `Relay1` / `Relay2` mises à jour en `RELAY_OPEN`
+
+### Gestion mémoire et initialisation
+
+- `Configuration_T.WiFiNetworks` : initialisé à `nullptr` dans la définition du struct — protège contre les accès avant que `ReadConfig()` ait été appelé
+- `JSON.ino` (`ReadConfig`) : `delete[] + nullptr` avant chaque `new WiFiNetwok_T[]` — supprime la fuite mémoire en cas de rechargement de config (ex. OTA)
+- `Preferences` : namespace NVS conservé ouvert intentionnellement toute la session — `get/put` sont appelés en continu depuis des timers et des handlers HTTP ; le handle est libéré proprement avant chaque restart
+- `millis()` overflow : confirmé non-problème — `prevMillis` et `currentMillis` sont `unsigned long`, la soustraction unsigned gère le rollover à 49 jours
+
+### Qualité de code
+
+- Typo corrigée : `WiFiNetwok_T` → `WiFiNetwork_T` dans `ESP32_Automat.ino` et `JSON.ino`
+- Mot de passe AP (`automat_pwd`) retiré du code source — valeur par défaut `"Levsmsa2"` supprimée du struct et du fallback `ReadConfig()` ; le mot de passe vit uniquement dans `config.json` sur le SPIFFS (`"access point password"`). Si la clé est absente, l'AP démarre ouvert avec un avertissement série
+- `ESP32_Automat.ino` : prototypes explicites ajoutés pour `AirTempDeviceID()`, `WaterTempDeviceID()`, `InternalTempDeviceID()`, leurs setters et `StringPreferences()` — fonctions définies dans `myPreferences.ino` qui compile après `Temperatures.ino` et `WebServer.ino`
 - Ajout de la commande `/info` dans la page de texte d'information du serveur Web
 - Ajout du bitmap **`alert_bits`** (16×16) dans `images.h`
-- `Automat.ino` : reformatage du code (style K&R, espacements) — aucun changement fonctionnel
+- `InitTemperatureSensors()` : `delay(2000)` déplacé après `DisplayAlert()` — affichage d'abord, pause ensuite
+- Période d'exécution de la task automate : **500 ms → 1 s**
 
 ---
 

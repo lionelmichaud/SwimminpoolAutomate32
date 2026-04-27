@@ -78,7 +78,7 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
   Config.domoticz.idxs.idx_posVolet  = doc["idx position volet"]  | 51;
 
   // get Wi-Fi access point parameters
-  Config.automat_pwd = doc["access point password"] | "Levsmsa2";
+  Config.automat_pwd = doc["access point password"] | "";
 
   //  Serial.println(); Serial.print("flipOLED : "); Serial.println(Config.flipOLED);
   //  Serial.println("Temporisations : "); Serial.println(Config.intervalTemp); Serial.println(Config.timeoutOpenClose); Serial.println(Config.intervalWiFi);
@@ -88,7 +88,11 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
   JsonArray NetArray = doc["networks"];
 
   Config.nbWiFiNetworks = NetArray.size();
-  Config.WiFiNetworks = new WiFiNetwok_T[Config.nbWiFiNetworks];
+  if (Config.WiFiNetworks != nullptr) {
+    delete[] Config.WiFiNetworks;
+    Config.WiFiNetworks = nullptr;
+  }
+  Config.WiFiNetworks = new WiFiNetwork_T[Config.nbWiFiNetworks];
   int i = 0;
 
   for (JsonObject elem : NetArray) {
