@@ -47,24 +47,22 @@ String CurrentCoverPositionDomoticz() {
 }
 
 //------------------------------------------------------------------------------------------------
-boolean LongPeriodOfLowAirTemp ()
-{
+boolean LongPeriodOfLowAirTemp() {
   return (PeriodOfLowAirTemp >= NbPeriodCold());
 }
 
 //------------------------------------------------------------------------------------------------
 //  Measure how long the air temp is lower than water temp
 //------------------------------------------------------------------------------------------------
-void MeasurePeriodOfCold()
-{
+void MeasurePeriodOfCold() {
   printlnV("-------------------------------- -TIMER CALLBACK------------------------------ -");
-  printV("Millis = "); printlnV(currentMillis);
-  if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis()))
-  {
+  printV("Millis = ");
+  printlnV(currentMillis);
+  if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis())) {
     PeriodOfLowAirTemp = PeriodOfLowAirTemp + 1;
-    printV(F("Duration = "));    printlnV(PeriodOfLowAirTemp);
-  }
-  else
+    printV(F("Duration = "));
+    printlnV(PeriodOfLowAirTemp);
+  } else
     PeriodOfLowAirTemp = 0;
 }
 
@@ -75,11 +73,11 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
   switch (theAutomatMode.ModeState) {
 
     case MANUAL:
-      //------------------
+      //==========================
       // En Mode MANUAL
-      //------------------
+      //==========================
       switch (theSwitchState) {
-        case AUTOMATIC :
+        case AUTOMATIC:
           //-------------------------------------
           // Switch commuté en position AUTOMATIC
           //-------------------------------------
@@ -93,7 +91,7 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
           }
           break;
 
-        case MANUAL :
+        case MANUAL:
           //-----------------------------------
           // Switch commuté en position MANUAL
           //-----------------------------------
@@ -102,18 +100,18 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
       }
 
 #if defined CLOSURE_TEMPO
-      timer.disable(TimerColdID); // désactiver le timer en attendant d'en avoir besoin
+      timer.disable(TimerColdID);  // désactiver le timer en attendant d'en avoir besoin
 #endif
 
       theAutomatMode.ErrorMode = false;
       break;
 
     case AUTOMATIC:
-      //--------------------
+      //==========================
       //  En Mode AUTOMATIC
-      //--------------------
+      //==========================
       switch (theSwitchState) {
-        case MANUAL :
+        case MANUAL:
           //-----------------------------------
           // Switch commuté en position MANUAL
           //-----------------------------------
@@ -125,10 +123,10 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
           digitalWrite(pAutoLED, AutoLED);
 
           // ouvrir le Relay1 pour etre sur de se retrouver en command manuelle
-          SwitchRelayAutoManu (MANUAL);
+          SwitchRelayAutoManu(MANUAL);
           break;
 
-        case AUTOMATIC :
+        case AUTOMATIC:
           //-------------------------------------
           // Switch commuté en position AUTOMATIC
           //-------------------------------------
@@ -163,23 +161,20 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
                 SwitchRelayOpenCloseCover(CLOSE_CMD_ACTIVATED);
 
                 // fermer le Relay1 pour passer en automatique
-                SwitchRelayAutoManu (AUTOMATIC);
-              }
-              else {
+                SwitchRelayAutoManu(AUTOMATIC);
+              } else {
                 //------------------------------------------------------------------------
                 // Le volet est maintenant fermé => hand-over control to the manual switch
                 //------------------------------------------------------------------------
                 // ouvrir le Relay1 pour rendre la main au controle manuel
-                SwitchRelayAutoManu (MANUAL);
+                SwitchRelayAutoManu(MANUAL);
               };
 
-              if (PoolState.AirTemp > PoolState.WaterTemp + Seuil())
-              {
+              if (PoolState.AirTemp > PoolState.WaterTemp + Seuil()) {
                 // Conditions favorables => commutation en mode ouverture piscine
                 theAutomatCmd.CommandState = OPEN_CMD_ACTIVATED;
                 prevMillis = millis();
-              }
-              else
+              } else
                 theAutomatCmd.prevCommandState = theAutomatCmd.CommandState;
 
               theAutomatCmd.ErrorCmd = false;
@@ -198,43 +193,41 @@ void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_
                 SwitchRelayOpenCloseCover(OPEN_CMD_ACTIVATED);
 
                 // fermer le Relay1 pour passer en automatique
-                SwitchRelayAutoManu (AUTOMATIC);
+                SwitchRelayAutoManu(AUTOMATIC);
 
-                PeriodOfLowAirTemp = 0; // Initilize counter of low air temp
-              }
-              else {
+                PeriodOfLowAirTemp = 0;  // Initilize counter of low air temp
+              } else {
                 //-------------------------------------------------------------------------
                 // Le volet est maintenant ouvert => hand-over control to the manual switch
                 //-------------------------------------------------------------------------
                 // ouvrir le Relay1 pour repasser en manuel
-                SwitchRelayAutoManu (MANUAL);
+                SwitchRelayAutoManu(MANUAL);
 
 #if defined CLOSURE_TEMPO
-                if (! timer.isEnabled(TimerColdID)) {
+                if (!timer.isEnabled(TimerColdID)) {
                   // PeriodOfLowAirTemp = 0; // Initilize counter of low air temp
-                  timer.restartTimer(TimerColdID); // reset T0 du timer périodique
-                  timer.enable(TimerColdID); // activer le timer périodique
+                  timer.restartTimer(TimerColdID);  // reset T0 du timer périodique
+                  timer.enable(TimerColdID);        // activer le timer périodique
                   printlnD("---------------------------- -TIMER ENABLED AND STARTED !-------------------------- -");
-                  printD(F("Millis = "));    printlnD(currentMillis);
+                  printD(F("Millis = "));
+                  printlnD(currentMillis);
                 }
 #endif
               };
 
-              //------------------------------------------------------------------------------------------
-              // Fermer si la température de l'air baisse longtemps en dessous de la température de l'eau
-              //------------------------------------------------------------------------------------------
+                //------------------------------------------------------------------------------------------
+                // Fermer si la température de l'air baisse longtemps en dessous de la température de l'eau
+                //------------------------------------------------------------------------------------------
 #if defined CLOSURE_TEMPO
-              if (LongPeriodOfLowAirTemp())
-              {
+              if (LongPeriodOfLowAirTemp()) {
                 // Conditions défavorables => commutation en mode fermeture piscine
                 theAutomatCmd.CommandState = CLOSE_CMD_ACTIVATED;
                 prevMillis = millis();
-                timer.disable(TimerColdID); // désactiver le timer périodique
+                timer.disable(TimerColdID);  // désactiver le timer périodique
                 printlnD("-------------------------------- -TIMER DISABLED !------------------------------ -");
               }
 #else
-              if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis()))
-              {
+              if (PoolState.AirTemp < (PoolState.WaterTemp + Seuil() - Hysteresis())) {
                 // commutation en mode fermeture piscine
                 theAutomatCmd.CommandState = CLOSE_CMD_ACTIVATED;
                 prevMillis = millis();

@@ -33,8 +33,8 @@ void InitTemperatureSensors(Configuration_T Config) {
   }
   else {
     printlnA(F("  Unable to find address for Device 0"));
-    delay (2000);
     DisplayAlert("Unable to find address for Device 0");
+    delay (2000);
     PoolState.ErrorTempSensorInit0 = true;
     PoolState.ErrorTempSensorInit = true;
   }
@@ -47,8 +47,8 @@ void InitTemperatureSensors(Configuration_T Config) {
   }
   else {
     printlnA(F("  Unable to find address for Device 1"));
-    delay (2000);
     DisplayAlert("Unable to find address for Device 1");
+    delay (2000);
     PoolState.ErrorTempSensorInit1 = true;
     PoolState.ErrorTempSensorInit = true;
   }
@@ -62,8 +62,8 @@ void InitTemperatureSensors(Configuration_T Config) {
   }
   else {
     printlnA(F("  Unable to find address for Device 2"));
-    delay (2000);
     DisplayAlert("Unable to find address for Device 2");
+    delay (2000);
     PoolState.ErrorTempSensorInit2 = true;
     //PoolState.ErrorTempSensorInit = true;
   }
@@ -77,10 +77,11 @@ void InitTemperatureSensors(Configuration_T Config) {
   }
 
   // set the resolution to N bit per device
-  DallasSensors.setResolution(Device0_Thermometer, TEMPERATURE_PRECISION);
-  DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
-  DallasSensors.setResolution(Device2_Thermometer, TEMPERATURE_PRECISION);
-  //DallasSensors.setResolution(TEMPERATURE_PRECISION);
+  // Ne pas appeler setResolution() avec une adresse non initialisée :
+  // cela enverrait une trame invalide qui perturbe tous les capteurs du bus.
+  if (!PoolState.ErrorTempSensorInit0) DallasSensors.setResolution(Device0_Thermometer, TEMPERATURE_PRECISION);
+  if (!PoolState.ErrorTempSensorInit1) DallasSensors.setResolution(Device1_Thermometer, TEMPERATURE_PRECISION);
+  if (!PoolState.ErrorTempSensorInit2) DallasSensors.setResolution(Device2_Thermometer, TEMPERATURE_PRECISION);
 
   delay (2000); // retarder l'init des thermistance
   if (!PoolState.ErrorTempSensorInit0) {
@@ -97,20 +98,23 @@ void InitTemperatureSensors(Configuration_T Config) {
   }
 
   // Get the initial temperatures
-  DallasSensors.requestTemperatures(); // Send the command to get temperature readings
-  if (!PoolState.ErrorTempSensorInit) {
-    // Température de l'air
-    PoolState.AirTemp = DallasSensors.getTempCByIndex(AirTempDeviceID()) + AirTempOffset();
+  // On utilise readTempRaw() qui effectue un retry si la valeur retournée
+  // est 85°C (valeur de mise sous tension) ou -127°C (erreur CRC 1-Wire).
+  DallasSensors.requestTemperatures();
+  delay(delaySamplingTemp);
+  if (isSensorInitOK(AirTempDeviceID())) {
+    PoolState.AirTemp = readTempRaw(AirTempDeviceID()) + AirTempOffset();
     printA("Air Temperature is : "); printlnA(PoolState.AirTemp);
     DisplayOneMoreLine("Temp Air : " + String(PoolState.AirTemp) + " °C", TEXT_ALIGN_LEFT);
-    // Température de l'eau
-    PoolState.WaterTemp = DallasSensors.getTempCByIndex(WaterTempDeviceID()) + WaterTempOffset();
+  }
+  if (isSensorInitOK(WaterTempDeviceID())) {
+    PoolState.WaterTemp = readTempRaw(WaterTempDeviceID()) + WaterTempOffset();
     printA("Eau Temperature is : "); printlnA(PoolState.WaterTemp);
     DisplayOneMoreLine("Temp Eau : " + String(PoolState.WaterTemp) + " °C", TEXT_ALIGN_LEFT);
-    // Température intérieure
-    PoolState.InternalTemp = DallasSensors.getTempCByIndex(InternalTempDeviceID());
+  }
+  if (isSensorInitOK(InternalTempDeviceID())) {
+    PoolState.InternalTemp = readTempRaw(InternalTempDeviceID());
     printA("Internal Temperature is : "); printlnA(PoolState.InternalTemp);
-    //DisplayOneMoreLine("Temp Eau : " + String(PoolState.InternalTemp) + " °C", TEXT_ALIGN_LEFT);
   }
   // Timer sampling temperatures
   TimerTemp = timer.setInterval(Config.intervalTemp, SampleTemperatures);
@@ -184,39 +188,68 @@ void DisplayWaterTemperatureOnLED (int WaterTemp, Configuration_T Config)
 }
 
 //**********************************************
+// Retourne true si le capteur d'index donné a été initialisé
+//**********************************************
+bool isSensorInitOK(int deviceID) {
+  switch (deviceID) {
+    case 0: return !PoolState.ErrorTempSensorInit0;
+    case 1: return !PoolState.ErrorTempSensorInit1;
+    case 2: return !PoolState.ErrorTempSensorInit2;
+    default: return false;
+  }
+}
+
+//**********************************************
+// Lit la température brute d'un capteur par index avec une tentative de retry
+// si la valeur retournée est DEVICE_DISCONNECTED (-127°C) ou la valeur
+// de mise sous tension (85°C), qui indiquent une corruption 1-Wire
+// (typiquement causée par une interruption WiFi pendant la transmission).
+//**********************************************
+float readTempRaw(int deviceIndex) {
+  float raw = DallasSensors.getTempCByIndex(deviceIndex);
+  if (raw == DEVICE_DISCONNECTED_C || raw == 85.0f) {
+    printlnW("1-Wire CRC error — retry");
+    raw = DallasSensors.getTempCByIndex(deviceIndex);
+  }
+  return raw;
+}
+
+//**********************************************
 // Acquire temperature from thermistor DALLAS
+// déclenché 'delaySamplingTemp' ms après SampleTemperatures()
 //**********************************************
 void AcquireTemperatures()
 {
-  // read the value from the sensor: Air Temperature
-  //AirTemp = TemperatureFrom3950NTC (pAirR) + TEMPOFFSETAIR;
-  Temp = DallasSensors.getTempCByIndex(AirTempDeviceID()) + AirTempOffset();
-  if (abs(Temp - PoolState.AirTemp) < 10) {
-    PoolState.AirTemp = Temp;
-    PoolState.ErrorTempAir = false;
+  // Température de l'air
+  if (isSensorInitOK(AirTempDeviceID())) {
+    Temp = readTempRaw(AirTempDeviceID()) + AirTempOffset();
+    if (abs(Temp - PoolState.AirTemp) < 10) {
+      PoolState.AirTemp = Temp;
+      PoolState.ErrorTempAir = false;
+    } else {
+      PoolState.ErrorTempAir = true;
+      printW("Gros écart de température Air: Air Temp = ");
+      printlnW(Temp);
+    }
   }
-  else {
-    PoolState.ErrorTempAir = true;
-    printW("Gros écart de température Air: Air Temp = ");
-    printlnW(Temp);
-  }
-  //  printD("Air Temperature is: ");
-  //  printlnD(PoolState.AirTemp);
 
-  // read the value from the sensor: Water Temperature
-  //WaterTemp = TemperatureFrom3950NTC (pWaterR) + TEMPOFFSETWATER;
-  Temp = DallasSensors.getTempCByIndex(WaterTempDeviceID()) + WaterTempOffset();
-  if (abs(Temp - PoolState.WaterTemp) < 10) {
-    PoolState.WaterTemp = Temp;
-    PoolState.ErrorTempWater = false;
+  // Température de l'eau
+  if (isSensorInitOK(WaterTempDeviceID())) {
+    Temp = readTempRaw(WaterTempDeviceID()) + WaterTempOffset();
+    if (abs(Temp - PoolState.WaterTemp) < 10) {
+      PoolState.WaterTemp = Temp;
+      PoolState.ErrorTempWater = false;
+    } else {
+      PoolState.ErrorTempWater = true;
+      printW("Gros écart de température Eau: Eau Temp = ");
+      printlnW(Temp);
+    }
   }
-  else {
-    PoolState.ErrorTempWater = true;
-    printW("Gros écart de température Eau: Eau Temp = ");
-    printlnW(Temp);
+
+  // Température intérieure
+  if (isSensorInitOK(InternalTempDeviceID())) {
+    PoolState.InternalTemp = readTempRaw(InternalTempDeviceID());
   }
-  // température intérieure
-  PoolState.InternalTemp = DallasSensors.getTempCByIndex(InternalTempDeviceID());
 }
 
 //**********************************************
@@ -224,15 +257,15 @@ void AcquireTemperatures()
 //**********************************************
 void SampleTemperatures()
 {
-  if (!PoolState.ErrorTempSensorInit) {
-    // Send the command to get temperature readings
-    DallasSensors.setWaitForConversion(false);  // makes it async
-    DallasSensors.requestTemperatures();
-    DallasSensors.setWaitForConversion(true);
+  // Déclencher la conversion sur tous les capteurs présents sur le bus.
+  // On ne conditionne pas au flag global ErrorTempSensorInit afin que
+  // les capteurs qui fonctionnent (eau notamment) continuent d'être
+  // lus même si l'un des autres a échoué à l'initialisation.
+  DallasSensors.setWaitForConversion(false);  // async : retour immédiat
+  DallasSensors.requestTemperatures();
+  DallasSensors.setWaitForConversion(true);
 
-    timer.setTimeout(delaySamplingTemp, AcquireTemperatures);
-    //printlnD("lancement acquisition temp");
-  }
+  timer.setTimeout(delaySamplingTemp, AcquireTemperatures);
 }
 
 //**********************************************

@@ -4,10 +4,14 @@
 void initializeOLED(Configuration_T Config) {
   printlnA("Initializing OLED...");
 
+  // Configurer le bus I2C avec un timeout pour éviter les blocages infinis
+  Wire.begin(pSDA, pSCL);
+  Wire.setTimeOut(3); // timeout de 3 ms par transaction
+
   // The ESP is capable of rendering 60fps in 80Mhz mode
   // but that won't give you much time for anything else
   // run it in 160Mhz mode or just set it to 30 fps
-  ui.setTargetFPS(25);
+  ui.setTargetFPS(20);
 
   // Customize the active and inactive symbol
   ui.setActiveSymbol(activeSymbol);
@@ -78,12 +82,13 @@ void drawPageSoftwareInfo(OLEDDisplay * display, OLEDDisplayUiState * state, int
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
 
-  display->drawString(0 + x, 10 + y, "SW: " + String(SOFTWARE) + " - " + String(VERSION));
-  display->drawString(0 + x, 20 + y, "Compiled :    " + String(__DATE__));
-  //display->drawString(0 + x, 30 + y, "Dallas devices : " + String(DallasDeviceCount));
-  if (!PoolState.ErrorTempSensorInit0) display->drawString(0 + x, 30 + y, "D0: " + String1wireAddress(Device0_Thermometer));
-  if (!PoolState.ErrorTempSensorInit1) display->drawString(0 + x, 40 + y, "D1: " + String1wireAddress(Device1_Thermometer));
-  if (!PoolState.ErrorTempSensorInit2) display->drawString(0 + x, 50 + y, "D2: " + String1wireAddress(Device2_Thermometer));
+  char buf[64];
+  snprintf(buf, sizeof(buf), "SW: %s - %s", SOFTWARE, VERSION);
+  display->drawString(0 + x, 10 + y, buf);
+  display->drawString(0 + x, 20 + y, "Compiled :    " __DATE__);
+  if (!PoolState.ErrorTempSensorInit0) { snprintf(buf, sizeof(buf), "D0: %s", String1wireAddress(Device0_Thermometer).c_str()); display->drawString(0 + x, 30 + y, buf); }
+  if (!PoolState.ErrorTempSensorInit1) { snprintf(buf, sizeof(buf), "D1: %s", String1wireAddress(Device1_Thermometer).c_str()); display->drawString(0 + x, 40 + y, buf); }
+  if (!PoolState.ErrorTempSensorInit2) { snprintf(buf, sizeof(buf), "D2: %s", String1wireAddress(Device2_Thermometer).c_str()); display->drawString(0 + x, 50 + y, buf); }
 }
 
 void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {
@@ -92,9 +97,9 @@ void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int
 
   display->drawString(0 + x, 10 + y, "Wi-Fi Access Point: ");
   display->drawString(0 + x, 20 + y, "  SSID:");
-  display->drawString(38 + x, 20 + y, String(Automat_ssid));
+  display->drawString(38 + x, 20 + y, Automat_ssid);
   display->drawString(0 + x, 30 + y, "  IP :");
-  display->drawString(38 + x, 30 + y, the_AP_IP_String );
+  display->drawString(38 + x, 30 + y, the_AP_IP_String);
   display->drawString(0 + x, 40 + y, "  MAC :");
   display->drawString(38 + x, 40 + y, WiFi.softAPmacAddress());
 }
@@ -103,9 +108,12 @@ void drawPageWiFi_ST_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
 
-  display->drawString(0 + x, 10 + y, "Wi-Fi Station: " + the_SSID);
+  char buf[32];
+  snprintf(buf, sizeof(buf), "Wi-Fi Station: %s", the_SSID.c_str());
+  display->drawString(0 + x, 10 + y, buf);
   display->drawString(0 + x, 20 + y, "  RSSI:");
-  display->drawString(38 + x, 20 + y, String(bestRSSI) + " dBm");
+  snprintf(buf, sizeof(buf), "%d dBm", bestRSSI);
+  display->drawString(38 + x, 20 + y, buf);
   display->drawString(0 + x, 30 + y, "  IP :");
   display->drawString(38 + x, 30 + y, the_IP_String);
   display->drawString(0 + x, 40 + y, "  MAC :");
@@ -116,8 +124,20 @@ void drawDeviceInfoTemperatures(OLEDDisplay * display, OLEDDisplayUiState * stat
   display->setTextAlignment(TEXT_ALIGN_CENTER);
   display->setFont(ArialMT_Plain_16);
 
-  display->drawString(64 + x, 14 + y,      "AIR : " + String(PoolState.AirTemp, 1) + "°C" + (PoolState.ErrorTempAir ? "*" : ""));
-  display->drawString(64 + x, 14 + 20 + y, "EAU : " + String(PoolState.WaterTemp, 1) + "°C" + (PoolState.ErrorTempWater ? "*" : ""));
+  char buf[24];
+  snprintf(buf, sizeof(buf), "AIR : %.1f\xB0C%s", PoolState.AirTemp, PoolState.ErrorTempAir ? "*" : "");
+  display->drawString(64 + x, 14 + y, buf);
+  snprintf(buf, sizeof(buf), "EAU : %.1f\xB0C%s", PoolState.WaterTemp, PoolState.ErrorTempWater ? "*" : "");
+  display->drawString(64 + x, 14 + 20 + y, buf);
+}
+
+void drawWaterTemperatures(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {
+  display->setTextAlignment(TEXT_ALIGN_CENTER);
+  display->setFont(Dialog_bold_32);
+
+  char buf[24];
+  snprintf(buf, sizeof(buf), "EAU: %.1f\xB0C%s", PoolState.WaterTemp, PoolState.ErrorTempWater ? "*" : "");
+  display->drawString(64 + x, 14 + y, buf);
 }
 
 void drawDeviceInfoStatus(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y) {

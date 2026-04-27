@@ -243,6 +243,7 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   message +=   "\n   -";
   message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   message += "\n\nCommands: ";
+  message += "\n   http://" + String(Local_Name) + ".local/info : cette page";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";
   message += "\n   http://" + String(Local_Name) + ".local/update_WEB : mettre a jour le logiciel WEB OTA";
   message += "\n   http://" + String(Local_Name) + ".local/restart    : redemarrer ESP";

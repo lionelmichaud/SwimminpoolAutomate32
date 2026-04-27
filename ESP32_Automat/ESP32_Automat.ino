@@ -1,6 +1,15 @@
 //
 // VERSIONS HISTORY
 //
+// VERSION 2.4.0 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0 - ESP8266 v2.3.0
+//  Tentative de fiabilisation des mesures de température Dalas grâce à Claude
+//  Suppression des communications Wi-Fi vers Domoticz
+//  Période d'exécution de l'auomate: 500ms => 1s
+//
+// VERSION 2.3.3 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0 - ESP8266 v2.3.0
+//  Tentative de fiabilisation des mesures de température Dalas en espacant les mesures (+100ms) - TEMPERATURE_PRECISION de 11 à 10 bits
+//  Modification du graphisme des pages display OLED - chgt fréquence de 25fps à 20fps - Font Dialog_bold_32 pour la temp eau
+//
 // VERSION 2.3.2 - Compatible de AsyncTCP v1.0.0 et ESP32 v1.0.0
 //  Inversion de la logique du swicth Maual / Automatique
 //
@@ -51,24 +60,24 @@
 //-------------------------------------------------
 // VERSION NUMBER
 #define SOFTWARE "ESP32_POOL"
-#define VERSION "2.3.2"
+#define VERSION "2.4.0"
 
 #define USB_OUTPUT
-#define ECHO    // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
+#define ECHO  // Echo toutes les commande reçues de l'Arduino vers l'Arduino après décodage
 #define PREFERENCES_OUTPUT
 //#define PREFERENCES_RESET
 #define CLOSURE_TEMPO
-#define NTP_OFFSET 3600 // 3600 = 1h en hiver ; 7200 = 2h en été
-#define NTP_PERIOD 30000 // milisecondes
+#define NTP_OFFSET 3600   // 3600 = 1h en hiver ; 7200 = 2h en été
+#define NTP_PERIOD 30000  // milisecondes
 #define TEMPOFFSETINCREMENT 0.25
-#define DOMOTICZ_TX // transmettre les valeurs à Domoticz
+#define DOMOTICZ_TX  // transmettre les valeurs à Domoticz
 //#define OLED_096 // 0.96 else 1.30 inch
 //#define DEBUG_OLED // 4 pages affichées (2 de + qu'en mode run)
 
 // USB serial line bitrate
 #define USBSERIAL_BITRATE 115200
 
-#define TEMPERATURE_PRECISION 11
+#define TEMPERATURE_PRECISION 10
 
 // SIMPLE DEBUG OPTIONS
 // Disable all debug ? Good to release builds (production)
@@ -106,6 +115,7 @@
 #include <Preferences.h>
 #include "NTPClient.h"
 #include "images.h"
+#include "font.h"
 #include "OLEDDisplayUi.h"
 #include <SimpleTimer.h>
 #include <WiFi.h>
@@ -116,12 +126,17 @@
 #include <ArduinoOTA.h>
 #include <Update.h>
 #include <DallasTemperature.h>
+// For a connection via I2C using brzo_i2c (must be installed) include
+// #include <brzo_i2c.h> // Only needed for Arduino 1.6.5 and earlier
 #include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
 
 #if defined OLED_096
-#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
+// For a connection via I2C using brzo_i2c (must be installed) include
+// #include "SSD1306Brzo.h"
+#include "SSD1306Wire.h"
 #else
-// or #include "SH1106Wire.h", legacy include: `#include "SH1106.h"`
+// For a connection via I2C using brzo_i2c (must be installed) include
+// #include "SH1106Brzo.h"
 #include "SH1106Wire.h"
 #endif
 
@@ -143,88 +158,88 @@ TaskHandle_t AutomatTask;
 //-------------------------------------------------
 // --- Déclaration des constantes globales ---
 //-------------------------------------------------
-const char *ConfigFilename = "/config.json";
+const char* ConfigFilename = "/config.json";
 // Compute the required size: 6 x réseaux Wi-Fi max possible
 const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(14) + 710;
 // paramètres Wi-Fi - station
-const char* Local_Name    = "esp32_pool";
+const char* Local_Name = "esp32_pool";
 // paramètres Wi-Fi - Access Point
-const char* Automat_ssid  = "esp32_pool";
+const char* Automat_ssid = "esp32_pool";
 // timer variables
 //  Generally, you should use "unsigned long" for variables that hold time
 //  The value will quickly become too large for an int to store
-const unsigned long intervalLED  =    500; // interval at which to blink the Red LED (milliseconds)
-const unsigned long intervalUSB  =  60010; // interval at which to send data over USB (milliseconds)
-const unsigned long delaySamplingTemp = 750 / (1 << (12 - TEMPERATURE_PRECISION)); // delay to sample the temperatures (milliseconds)
-const unsigned long periodColdTimer   =  60000; // période de la vérification la baisse de température (1 minute)
+const unsigned long intervalLED = 500;                                                    // interval at which to blink the Red LED (milliseconds)
+const unsigned long intervalUSB = 60010;                                                  // interval at which to send data over USB (milliseconds)
+const unsigned long delaySamplingTemp = 750 / (1 << (12 - TEMPERATURE_PRECISION)) + 100;  // delay to sample the temperatures (milliseconds)
+const unsigned long periodColdTimer = 60000;                                              // période de la vérification la baisse de température (1 minute)
 // OLED constants
 const int fontsize = 10;
 // set GPIO pin numbers
 //   Side 1
-const int pSDA        =  22;  // the number of the SCL pin on I2C bus
-const int pSCL        =  19;  // the number of the SDA pin on I2C bus
-const int pAutoSwitch =  23;  // the number of the AutoSwitch pin
-const int pAutoLED    =  18;  // the number of the AutoLED pin
-const int pTempLEDblue =  5; // the number of the TempLEDblue pin
-const int pDummy1     =  17;  // spare
-const int pDummy2     =  16;  // spare
+const int pSDA = 22;          // the number of the SCL pin on I2C bus
+const int pSCL = 19;          // the number of the SDA pin on I2C bus
+const int pAutoSwitch = 23;   // the number of the AutoSwitch pin
+const int pAutoLED = 18;      // the number of the AutoLED pin
+const int pTempLEDblue = 5;   // the number of the TempLEDblue pin
+const int pDummy1 = 17;       // spare
+const int pDummy2 = 16;       // spare
 const int pTempLEDgreen = 4;  // the number of the TempLEDgreen pin
-const int pDummy3     =   0;  // spare
-const int pDummy4     =   2;  // spare
-const int pTempLEDred =  15;  // the number of the TempLEDred pin
+const int pDummy3 = 0;        // spare
+const int pDummy4 = 2;        // spare
+const int pTempLEDred = 15;   // the number of the TempLEDred pin
 const int pTempDS18B20 = 13;  // the number of the TempDS18B20 pin
 //   Side 2
-const int pDummy5     =  34;  // spare
-const int pDummy6     =  35;  // spare
-const int pDummy7     =  32;  // spare
-const int pDummy8     =  33;  // spare
-const int pDummy9     =  25;  // spare
-const int pDummy10    =  26;  // spare
-const int pDummy11    =  27;  // spare
-const int pRelay2     =  12;  // the number of the Relay2 pin
-const int pRelay1     =  14;  // the number of the Relay1 pin
+const int pDummy5 = 34;   // spare
+const int pDummy6 = 35;   // spare
+const int pDummy7 = 32;   // spare
+const int pDummy8 = 33;   // spare
+const int pDummy9 = 25;   // spare
+const int pDummy10 = 26;  // spare
+const int pDummy11 = 27;  // spare
+const int pRelay2 = 12;   // the number of the Relay2 pin
+const int pRelay1 = 14;   // the number of the Relay1 pin
 //const int pIntTempR =     A3; // the number of the IntTempR pin
 // set PWM channels parameters
-const int cTempLEDblue  = 0;
+const int cTempLEDblue = 0;
 const int cTempLEDgreen = 1;
-const int cTempLEDred   = 2;
-const int LEDfreq = 5000; // Hz
-const int LEDres  = 8; // bits => 256 levels
+const int cTempLEDred = 2;
+const int LEDfreq = 5000;  // Hz
+const int LEDres = 8;      // bits => 256 levels
 
 //-------------------------------------------------
 // --- Déclaration de types ---
 //-------------------------------------------------
-struct idx_T { // IDX of Domoticz devices
+struct idx_T {  // IDX of Domoticz devices
   int idx_waterTemp = 48;
-  int idx_airTemp   = 49;
-  int idx_automate  = 50;
-  int idx_posVolet  = 51;
+  int idx_airTemp = 49;
+  int idx_automate = 50;
+  int idx_posVolet = 51;
 };
 // configuration du logiciel
-struct domoticz_T {   // configuration Domoticz
-  String  host = "192.168.1.23"; // "192.168.1.23";
-  int     port = 8084;
-  idx_T   idxs;         // list of Domoticz idx
+struct domoticz_T {              // configuration Domoticz
+  String host = "192.168.1.23";  // "192.168.1.23";
+  int port = 8084;
+  idx_T idxs;  // list of Domoticz idx
 };
 struct WiFiNetwok_T {
   String ssid;
   String password;
 };
 struct Configuration_T {
-  int             RedLEDtemp       = 20;
-  int             GreenLEDtemp     = 27;
-  bool            flipOLED         = false;
-  unsigned long   intervalTemp     =   5000; // interval at which to sample the temperatures (milliseconds)
-  unsigned long   timeoutOpenClose = 145000; // max duration of the opening or closure in mili-seconds (2minutes 25sec)
-  unsigned long   intervalWiFi     =  60000; // interval at which to send data over WiFi (milliseconds)
-  domoticz_T      domoticz;                  // Domoticz parameters
-  String          automat_pwd      = "Levsmsa2";
-  int             nbWiFiNetworks   = -1;
-  WiFiNetwok_T*   WiFiNetworks;              // list of Wi-Fi networks
+  int RedLEDtemp = 20;
+  int GreenLEDtemp = 27;
+  bool flipOLED = false;
+  unsigned long intervalTemp = 5000;        // interval at which to sample the temperatures (milliseconds)
+  unsigned long timeoutOpenClose = 145000;  // max duration of the opening or closure in mili-seconds (2minutes 25sec)
+  unsigned long intervalWiFi = 60000;       // interval at which to send data over WiFi (milliseconds)
+  domoticz_T domoticz;                      // Domoticz parameters
+  String automat_pwd = "Levsmsa2";
+  int nbWiFiNetworks = -1;
+  WiFiNetwok_T* WiFiNetworks;  // list of Wi-Fi networks
 };
 // Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
-const int MANUAL     = 0;
-const int AUTOMATIC  = 1;
+const int MANUAL = 0;
+const int AUTOMATIC = 1;
 const int UNDEF_MODE = 2;
 struct Automat_Mode_T {
   int ModeState = MANUAL;
@@ -233,25 +248,25 @@ struct Automat_Mode_T {
 };
 // Automat 2 : Commande Volet roulant CLOSE_CMD_ACTIVATED || OPEN_CMD_ACTIVATED || UNDEF_CMD
 const int CLOSE_CMD_ACTIVATED = 0;
-const int OPEN_CMD_ACTIVATED  = 1;
+const int OPEN_CMD_ACTIVATED = 1;
 const int UNDEF_CMD = 2;
 struct Automat_Cmd_T {
-  int CommandState     = UNDEF_CMD;
+  int CommandState = UNDEF_CMD;
   int prevCommandState = UNDEF_CMD;
-  boolean ErrorCmd  = false;
+  boolean ErrorCmd = false;
 };
 // Etat de l'automate et de la piscine
 struct PoolState_T {
-  float AirTemp       = -256.0;
-  float WaterTemp     = -256.0;
-  float InternalTemp  = -256.0;
+  float AirTemp = -256.0;
+  float WaterTemp = -256.0;
+  float InternalTemp = -256.0;
   boolean ErrorConfig = false;
-  boolean ErrorTempSensorInit   = false; // erreur à l'initialisation de l'un des capteurs one wire
-  boolean ErrorTempSensorInit0  = false; // erreur à l'initialisation du capteur one wire
-  boolean ErrorTempSensorInit1  = false; // erreur à l'initialisation du capteur one wire
-  boolean ErrorTempSensorInit2  = false; // erreur à l'initialisation du capteur one wire
-  boolean ErrorTempAir          = false; // température air mesurée invalide
-  boolean ErrorTempWater        = false; // température air mesurée invalide
+  boolean ErrorTempSensorInit = false;   // erreur à l'initialisation de l'un des capteurs one wire
+  boolean ErrorTempSensorInit0 = false;  // erreur à l'initialisation du capteur one wire
+  boolean ErrorTempSensorInit1 = false;  // erreur à l'initialisation du capteur one wire
+  boolean ErrorTempSensorInit2 = false;  // erreur à l'initialisation du capteur one wire
+  boolean ErrorTempAir = false;          // température air mesurée invalide
+  boolean ErrorTempWater = false;        // température air mesurée invalide
 };
 
 //-------------------------------------------------
@@ -277,7 +292,7 @@ HTTPClient http;
 //   Initialize the OLED display using Wire library
 //   display(@, SDA, SCL)
 #if defined OLED_096
-SSD1306Wire  display(0x3c, pSDA, pSCL);
+SSD1306Wire display(0x3c, pSDA, pSCL);
 #else
 SH1106Wire display(0x3c, pSDA, pSCL);
 OLEDDisplayUi ui(&display);
@@ -290,8 +305,8 @@ SimpleTimer timer;
 int TimerColdID;
 int TimerWiFi;
 int TimerTemp;
-unsigned long prevMillis =  0; // (milliseconds)
-unsigned long currentMillis =  0; // (milliseconds)
+unsigned long prevMillis = 0;     // (milliseconds)
+unsigned long currentMillis = 0;  // (milliseconds)
 
 // Wi-Fi variables
 // ---------------
@@ -335,20 +350,20 @@ PoolState_T PoolState;
 
 // Variables
 // ---------
-int AutoLED =    LOW;
-int AutoSwitch = LOW; // Automatic = OUVERT/HIGH || Manual = FERME/LOW
+int AutoLED = LOW;
+int AutoSwitch = LOW;  // Automatic = OUVERT/HIGH || Manual = FERME/LOW
 int AutoSwitchState = MANUAL;
-int TempLEDred =   0;
+int TempLEDred = 0;
 int TempLEDgreen = 0;
-int TempLEDblue =  0;
-int Relay1 = HIGH; // Relais au repos (3.3V présent en entrée) => La clé manuelle a le controle : automatisme débrayé
-int Relay2 = HIGH; // Relais au repos (3.3V présent en entrée) => Volet Fermé
-int PeriodOfLowAirTemp = 0; // compte le nombre de périodes 'periodColdTimer' pendant lesquelles la temp à été vue basse
-float Temp =       0.0;
+int TempLEDblue = 0;
+int Relay1 = HIGH;           // Relais au repos (3.3V présent en entrée) => La clé manuelle a le controle : automatisme débrayé
+int Relay2 = HIGH;           // Relais au repos (3.3V présent en entrée) => Volet Fermé
+int PeriodOfLowAirTemp = 0;  // compte le nombre de périodes 'periodColdTimer' pendant lesquelles la temp à été vue basse
+float Temp = 0.0;
 
-String inputString = "";         // a string to hold incoming data
+String inputString = "";  // a string to hold incoming data
 String url = "";
-boolean UnexpectedStringReceived = false; // string receieved from Arduino is not understood
+boolean UnexpectedStringReceived = false;  // string receieved from Arduino is not understood
 String UnexpectedString = "";
 
 // Setup a oneWire instance to communicate with any OneWire devices
@@ -375,13 +390,14 @@ void initializeOLED(Configuration_T Config);
 void InitTemperatureSensors(Configuration_T Config);
 void DisplayOneMoreLine(String line, OLEDDISPLAY_TEXT_ALIGNMENT textAlignment);
 void DisplayAlert(String AlertText);
-void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
-void drawPageSoftwareInfo(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
-void drawPageWiFi_AP_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
-void drawPageWiFi_ST_Info(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
-void drawDeviceInfoTemperatures(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
-void drawDeviceInfoStatus(OLEDDisplay * display, OLEDDisplayUiState * state, int16_t x, int16_t y);
-void StartWEBserver ();
+void msOverlay(OLEDDisplay* display, OLEDDisplayUiState* state);
+void drawPageSoftwareInfo(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawPageWiFi_AP_Info(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawPageWiFi_ST_Info(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawDeviceInfoTemperatures(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawWaterTemperatures(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void drawDeviceInfoStatus(OLEDDisplay* display, OLEDDisplayUiState* state, int16_t x, int16_t y);
+void StartWEBserver();
 void MeasurePeriodOfCold();
 void parseString(String receivedString);
 void SetWaterTempOffset(float Offset);
@@ -399,41 +415,68 @@ void ResetPreferences();
 void DumpPreferences();
 void print1wireAddress(DeviceAddress deviceAddress);
 void print1wireTemperature(DeviceAddress deviceAddress);
-void DisplayWaterTemperatureOnLED (int WaterTemp, Configuration_T Config);
+void DisplayWaterTemperatureOnLED(int WaterTemp, Configuration_T Config);
 void SampleTemperatures();
 String String1wireAddress(DeviceAddress deviceAddress);
 boolean Start_WiFi_IDE_OTA();
 void SendDataOverUSB();
 void BlinkRedAutoLED();
-boolean SwitchRelayAutoManu (int State);
-boolean SwitchRelayOpenCloseCover (int State);
+boolean SwitchRelayAutoManu(int State);
+boolean SwitchRelayOpenCloseCover(int State);
 void AutomatRun(Configuration_T Config, Automat_Mode_T& theAutomatMode, Automat_Cmd_T& theAutomatCmd, int theSwitchState);
-void SendDataToDomoticz ();
-boolean ReadConfig(const char *filename, Configuration_T& Config);
-void AutomatTaskCode( void * pvParameters );
+void SendDataToDomoticz();
+boolean ReadConfig(const char* filename, Configuration_T& Config);
+void AutomatTaskCode(void* pvParameters);
+void recoverI2C();
 
-bool toggle (bool p) {
+bool toggle(bool p) {
   return (p ? false : true);
+}
+
+//--------------------------------------------------------------------
+// RECUPERATION DU BUS I2C EN CAS DE BLOCAGE
+// Envoie 9 impulsions d'horloge sur SCL pour libérer un SDA bloqué,
+// puis réinitialise le périphérique Wire et le display.
+//--------------------------------------------------------------------
+void recoverI2C() {
+  printlnE("I2C bus stuck — attempting recovery...");
+  pinMode(pSCL, OUTPUT);
+  for (int i = 0; i < 9; i++) {
+    digitalWrite(pSCL, LOW);
+    delayMicroseconds(5);
+    digitalWrite(pSCL, HIGH);
+    delayMicroseconds(5);
+  }
+  Wire.end();
+  delay(10);
+  Wire.begin(pSDA, pSCL);
+  Wire.setTimeOut(3);  // timeout 3 ms
+  display.init();
+  if (Configuration.flipOLED) display.flipScreenVertically();
+  printlnA("I2C recovery done.");
 }
 
 // This array keeps function pointers to all frames
 // frames are the single views that slide in
 #if defined DEBUG_OLED
-FrameCallback frames[] = { drawPageSoftwareInfo,
-                           drawPageWiFi_AP_Info, 
-                           drawPageWiFi_ST_Info,
-                           drawDeviceInfoTemperatures,
-                           //drawDeviceInfoStatus
-                         };
+FrameCallback frames[] = {
+  drawPageSoftwareInfo,
+  drawPageWiFi_AP_Info,
+  drawPageWiFi_ST_Info,
+  drawDeviceInfoTemperatures,
+  //drawDeviceInfoStatus
+};
 // how many frames are there?
 int frameCount = 4;
 #else
-FrameCallback frames[] = { //drawPageSoftwareInfo,
-                           //drawPageWiFi_AP_Info, 
-                           drawPageWiFi_ST_Info,
-                           drawDeviceInfoTemperatures,
-                           //drawDeviceInfoStatus
-                         };
+FrameCallback frames[] = {
+  //drawPageSoftwareInfo,
+  //drawPageWiFi_AP_Info,
+  drawPageWiFi_ST_Info,
+  //drawDeviceInfoTemperatures,
+  drawWaterTemperatures,
+  //drawDeviceInfoStatus
+};
 // how many frames are there?
 int frameCount = 2;
 #endif
@@ -443,12 +486,12 @@ OverlayCallback overlays[] = { msOverlay };
 int overlaysCount = 1;
 
 // Include SerialDebug
-#include "SerialDebug.h" //https://github.com/JoaoLopesF/SerialDebug
+#include "SerialDebug.h"  //https://github.com/JoaoLopesF/SerialDebug
 
 
-//--------------------------------------------------------------------
+//=====================================================================
 // SETUP
-//--------------------------------------------------------------------
+//=====================================================================
 void setup() {
   //-------------------------------
   // initialize serial
@@ -478,8 +521,9 @@ void setup() {
   printlnA("--------------------------");
   printlnA("  ESP01 is booting ");
   printlnA("--------------------------");
-  printA("  VERSION = "); printlnA(VERSION);
-  printlnA("  I was compiled " __DATE__ );
+  printA("  VERSION = ");
+  printlnA(VERSION);
+  printlnA("  I was compiled " __DATE__);
   printlnA("--------------------------");
 
   //------------------------------------------
@@ -525,8 +569,8 @@ void setup() {
 
 #if defined CLOSURE_TEMPO
   printlnA("Initialisation timer période de refroidissement avant fermeture");
-  TimerColdID = timer.setInterval(periodColdTimer, MeasurePeriodOfCold); // créer le timer
-  timer.disable(TimerColdID); // désactiver le timer en attendant d'en avoir besoin
+  TimerColdID = timer.setInterval(periodColdTimer, MeasurePeriodOfCold);  // créer le timer
+  timer.disable(TimerColdID);                                             // désactiver le timer en attendant d'en avoir besoin
 #endif
 
   //--------------------------------------------------------------------
@@ -567,7 +611,7 @@ void setup() {
   //-------------------------------------------
   printA("Initialisation timer Wi-Fi = ");
   printlnA(millis());
-  TimerWiFi = timer.setInterval(Configuration.intervalWiFi, SendDataToDomoticz);
+  //TimerWiFi = timer.setInterval(Configuration.intervalWiFi, SendDataToDomoticz);
   //timer.restartTimer(TimerWiFi);
 
   //-----------------------------------------------------
@@ -575,13 +619,13 @@ void setup() {
   //-----------------------------------------------------
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
-    AutomatTaskCode,   /* Task function. */
-    "AutomatTask",     /* name of task. */
-    10000,       /* Stack size of task */
-    NULL,        /* parameter of the task */
-    1,           /* priority of the task */
-    &AutomatTask,      /* Task handle to keep track of created task */
-    0);          /* pin task to core 0 */
+    AutomatTaskCode, /* Task function. */
+    "AutomatTask",   /* name of task. */
+    10000,           /* Stack size of task */
+    NULL,            /* parameter of the task */
+    1,               /* priority of the task */
+    &AutomatTask,    /* Task handle to keep track of created task */
+    0);              /* pin task to core 0 */
   printlnA("Automat task created on core 0...");
 
 #ifndef DEBUG_DISABLE_DEBUGGER
@@ -632,13 +676,12 @@ void setup() {
   debugAddGlobalInt(F("frameCount"), &frameCount);
   debugAddGlobalInt(F("overlaysCount"), &overlaysCount);
 
-#endif // DEBUG_DISABLE_DEBUGGER
-
+#endif  // DEBUG_DISABLE_DEBUGGER
 }
 
-//--------------------------------------------------------------------
+//=====================================================================
 // LOOP (EXECUTES ON CORE 1 BY DEFAULT)
-//--------------------------------------------------------------------
+//=====================================================================
 void loop() {
 
   // SerialDebug handle
@@ -659,6 +702,11 @@ void loop() {
   timer.run();
 
   int remainingTimeBudget = ui.update();
+
+  // Si ui.update() renvoie une valeur très négative, le bus I2C est probablement bloqué
+  if (remainingTimeBudget < -500) {
+    recoverI2C();
+  }
 
   if (remainingTimeBudget > 0) {
     // You can do some work here
@@ -724,8 +772,12 @@ void loop() {
 
 //--------------------------------------------------------------------
 // TASK AutomatTaskCode (EXECUTES ON CORE 0)
+// - Acquisition de l'état du commutateur AUTO/MANU
+// - Commande de la LED RVB d'indication de température de l'eau
+// - Exécution de l'automate du système
+// - Pause de 1 seconde
 //--------------------------------------------------------------------
-void AutomatTaskCode( void * pvParameters ) {
+void AutomatTaskCode(void* pvParameters) {
   while (true) {
     //-------------------------------------------------------
     // ACQUISITIONS OF INPUTS
@@ -741,13 +793,13 @@ void AutomatTaskCode( void * pvParameters ) {
     // SET OUTPUTS
     //-------------------------------------------------------
     // set the Water temp LED color as a function of Water temperature
-    DisplayWaterTemperatureOnLED (PoolState.WaterTemp, Configuration);
+    DisplayWaterTemperatureOnLED(PoolState.WaterTemp, Configuration);
 
     //-------------------------------------------------------
     //  EXECUTE STATE MACHINES
     //-------------------------------------------------------
     AutomatRun(Configuration, Automat_Mode, Automat_Cmd, AutoSwitchState);
 
-    delay(500);
+    delay(1000);
   }
 }
