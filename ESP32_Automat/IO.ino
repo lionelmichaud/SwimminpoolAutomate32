@@ -20,18 +20,14 @@ void InitializeIO() {
   //    switch off Auto LED
   digitalWrite(pAutoLED, AutoLED);
 
-  //    configure LED PWM functionalitites
-  ledcSetup(cTempLEDred,   LEDfreq, LEDres);
-  ledcSetup(cTempLEDgreen, LEDfreq, LEDres);
-  ledcSetup(cTempLEDblue,  LEDfreq, LEDres);
-  //    attach the channel to the GPIO to be controlled
-  ledcAttachPin(pTempLEDred,   cTempLEDred);
-  ledcAttachPin(pTempLEDgreen, cTempLEDgreen);
-  ledcAttachPin(pTempLEDblue,  cTempLEDblue);
+  //    configure LED PWM (ESP32 core v3: ledcAttach remplace ledcSetup+ledcAttachPin)
+  ledcAttach(pTempLEDred,   LEDfreq, LEDres);
+  ledcAttach(pTempLEDgreen, LEDfreq, LEDres);
+  ledcAttach(pTempLEDblue,  LEDfreq, LEDres);
   //    switch off Water Temperature LED color between red (cold) and green (hot):
-  ledcWrite(cTempLEDred, 0);
-  ledcWrite(cTempLEDgreen, 0);
-  ledcWrite(cTempLEDblue, 0);
+  ledcWrite(pTempLEDred,   0);
+  ledcWrite(pTempLEDgreen, 0);
+  ledcWrite(pTempLEDblue,  0);
 }
 
 

@@ -182,9 +182,9 @@ void DisplayWaterTemperatureOnLED (int WaterTemp, Configuration_T Config)
   //  analogWrite(pTempLEDred,   TempLEDred);
   //  analogWrite(pTempLEDgreen, TempLEDgreen);
   //  analogWrite(pTempLEDblue,  TempLEDblue);
-  ledcWrite(cTempLEDred,   TempLEDred);
-  ledcWrite(cTempLEDgreen, TempLEDgreen);
-  ledcWrite(cTempLEDblue,  TempLEDblue);
+  ledcWrite(pTempLEDred,   TempLEDred);
+  ledcWrite(pTempLEDgreen, TempLEDgreen);
+  ledcWrite(pTempLEDblue,  TempLEDblue);
 }
 
 //**********************************************

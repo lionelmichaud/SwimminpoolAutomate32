@@ -47,62 +47,51 @@ boolean ReadConfig(const char *filename, Configuration_T& Config) {
     return false;
   }
 
-  // Allocate the memory pool on the stack.
-  // Don't forget to change the capacity to match your JSON document.
-  // Use arduinojson.org/assistant to compute the capacity.
-  StaticJsonBuffer<JSONBufferConfigCapacity> jsonBuffer;
+  JsonDocument doc;
+  DeserializationError error = deserializeJson(doc, configFile);
 
-  // Parse the root object
-  JsonObject& root = jsonBuffer.parseObject(configFile);
-  JsonObject& root_ = root;
-
-  // vérifier le bon décodage
-  if (!root.success())
-  {
+  if (error) {
     printlnA("Failed to read JSON config file, using default configuration");
     DisplayAlert("Failed to read config file");
     return false;
   }
-  root_.prettyPrintTo(Serial);
+  serializeJsonPretty(doc, Serial);
 
   // get RVB LED parameters
-  Config.RedLEDtemp   = root["temperature LED rouge"] | 20;
-  Config.GreenLEDtemp = root["temperature LED verte"] | 27;
+  Config.RedLEDtemp   = doc["temperature LED rouge"] | 20;
+  Config.GreenLEDtemp = doc["temperature LED verte"] | 27;
 
   // get OLED parameters
-  Config.flipOLED = root["flip OLED display"].as<bool>();
+  Config.flipOLED = doc["flip OLED display"].as<bool>();
 
   // get timers values
-  Config.intervalTemp     = 1000 * (root["temperature sampling period (s)"] | 5);
-  Config.timeoutOpenClose = 1000 * (root["cover open/close duration (s)"] | 145);
-  Config.intervalWiFi     = 1000 * (root["wi-fi transmission period (s)"] |  60);
+  Config.intervalTemp     = 1000 * (doc["temperature sampling period (s)"] | 5);
+  Config.timeoutOpenClose = 1000 * (doc["cover open/close duration (s)"] | 145);
+  Config.intervalWiFi     = 1000 * (doc["wi-fi transmission period (s)"] |  60);
 
   // get Domoticz parameters
-  Config.domoticz.host = root["domoticz IP"] | "192.168.1.23";
-  Config.domoticz.port = root["domoticz port"] | 8084;
-  Config.domoticz.idxs.idx_waterTemp = root["idx temperature eau"] | 48;
-  Config.domoticz.idxs.idx_airTemp   = root["idx temperature air"] | 49;
-  Config.domoticz.idxs.idx_automate  = root["idx automate mode"]   | 50;
-  Config.domoticz.idxs.idx_posVolet  = root["idx position volet"]  | 51;
+  Config.domoticz.host = doc["domoticz IP"] | "192.168.1.23";
+  Config.domoticz.port = doc["domoticz port"] | 8084;
+  Config.domoticz.idxs.idx_waterTemp = doc["idx temperature eau"] | 48;
+  Config.domoticz.idxs.idx_airTemp   = doc["idx temperature air"] | 49;
+  Config.domoticz.idxs.idx_automate  = doc["idx automate mode"]   | 50;
+  Config.domoticz.idxs.idx_posVolet  = doc["idx position volet"]  | 51;
 
   // get Wi-Fi access point parameters
-  Config.automat_pwd = root["access point password"] | "Levsmsa2";
+  Config.automat_pwd = doc["access point password"] | "Levsmsa2";
 
   //  Serial.println(); Serial.print("flipOLED : "); Serial.println(Config.flipOLED);
   //  Serial.println("Temporisations : "); Serial.println(Config.intervalTemp); Serial.println(Config.timeoutOpenClose); Serial.println(Config.intervalWiFi);
   //  Serial.println("IDX : "); Serial.println(Config.domoticz.idxs.idx_waterTemp); Serial.println(Config.domoticz.idxs.idx_airTemp); Serial.println(Config.domoticz.idxs.idx_automate);
   //  Serial.println("AP password : "); Serial.println(Config.automat_pwd);
   printlnA("Networks configurations: ");
-  // Extract the wi-fi networks array
-  JsonArray & NetArray = root_["networks"];
+  JsonArray NetArray = doc["networks"];
 
   Config.nbWiFiNetworks = NetArray.size();
   Config.WiFiNetworks = new WiFiNetwok_T[Config.nbWiFiNetworks];
   int i = 0;
 
-  // Walk the JsonArray efficiently
-  for (JsonObject& elem : NetArray) {
-    JsonObject& network = elem;
+  for (JsonObject elem : NetArray) {
     //    const char* ssid = elem["ssid"]; // "Mon BWi-Fi"
     //    const char* password = elem["password"]; // "louannetvanessasontmessourisadorees"
     Config.WiFiNetworks[i].ssid = elem["ssid"].as<String>();

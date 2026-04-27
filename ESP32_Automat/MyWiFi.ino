@@ -312,8 +312,6 @@ void BrowseService(const char * service, const char * proto) {
       printA(i + 1);
       printA(": ");
       printA(MDNS.hostname(i));
-      printA(" (");
-      printA(MDNS.IP(i));
       printA(":");
       printA(MDNS.port(i));
       printlnA(")");

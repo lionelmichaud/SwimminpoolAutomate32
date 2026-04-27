@@ -244,6 +244,7 @@ void handleTextInfo(AsyncWebServerRequest *request) {
   message += "\n   Seuils : Temp Air = Temp Eau + " + String(Seuil()) + " (ouvre) / " + String(Seuil() - Hysteresis()) + " (ferme)";
   message += "\n\nCommands: ";
   message += "\n   http://" + String(Local_Name) + ".local/info : cette page";
+  message += "\n   http://" + String(Local_Name) + ".local/statusJSON : état complet au format JSON (domotique)";
   message += "\n   http://" + String(Local_Name) + ".local/update_IDE : mettre a jour le logiciel IDE OTA";
   message += "\n   http://" + String(Local_Name) + ".local/update_WEB : mettre a jour le logiciel WEB OTA";
   message += "\n   http://" + String(Local_Name) + ".local/restart    : redemarrer ESP";
@@ -361,6 +362,20 @@ void handleSwapAirInternal(AsyncWebServerRequest *request) {
 }
 
 //--------------------------------------------------------------------
+void handleStatusJSON(AsyncWebServerRequest *request) {
+  JsonDocument doc;
+  doc["waterTemp"]    = serialized(String(PoolState.WaterTemp, 1));
+  doc["airTemp"]      = serialized(String(PoolState.AirTemp, 1));
+  doc["internalTemp"] = serialized(String(PoolState.InternalTemp, 1));
+  doc["mode"]         = (Automat_Mode.ModeState == AUTOMATIC) ? "automatique" : "manuel";
+  doc["cover"]        = (Automat_Cmd.CommandState == OPEN_CMD_ACTIVATED) ? "ouvert" : "ferme";
+
+  String output;
+  serializeJson(doc, output);
+  request->send(200, "application/json", output);
+}
+
+//--------------------------------------------------------------------
 void handleNotFound(AsyncWebServerRequest *request) {
   //  String message = "File Not Found\n\n";
   //  message += "URL: ";
@@ -401,13 +416,13 @@ void handleNotFound(AsyncWebServerRequest *request) {
   int headers = request->headers();
   int i;
   for (i = 0; i < headers; i++) {
-    AsyncWebHeader* h = request->getHeader(i);
+    const AsyncWebHeader* h = request->getHeader(i);
     Serial.printf("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
   }
 
   int params = request->params();
   for (i = 0; i < params; i++) {
-    AsyncWebParameter* p = request->getParam(i);
+    const AsyncWebParameter* p = request->getParam(i);
     if (p->isFile()) {
       Serial.printf("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
     } else if (p->isPost()) {
@@ -535,6 +550,9 @@ void StartWEBserver () {
   server.on("/swap_air_eau", handleSwapAirWater);
   // Page WEB de permutation des sondes de température Air et Interne
   server.on("/swap_air_interne", handleSwapAirInternal);
+
+  // Endpoint domotique : état complet au format JSON
+  server.on("/statusJSON", handleStatusJSON);
 
   // Page WEB d'erreur
   server.onNotFound(handleNotFound);

@@ -34,6 +34,20 @@ Compatible AsyncTCP v1.0.0 · ESP32 v1.0.0 · ESP8266 v2.3.0
 - En mode non-debug : `drawDeviceInfoTemperatures` remplacée par `drawWaterTemperatures`
 - Remplacement des concaténations `String +` par `snprintf()` + buffer pour éviter les allocations dynamiques
 
+### Domotique
+
+- Nouvel endpoint **`GET /statusJSON`** : retourne l'état complet de l'automate au format JSON
+  ```json
+  {
+    "waterTemp": "24.3",
+    "airTemp": "28.1",
+    "internalTemp": "31.0",
+    "mode": "automatique",
+    "cover": "ouvert"
+  }
+  ```
+- Migration **ArduinoJson v5 → v7** dans `JSON.ino` (`StaticJsonBuffer` → `JsonDocument`, `parseObject` → `deserializeJson`)
+
 ### Divers
 
 - Période d'exécution de la task automate : **500 ms → 1 s** (`delay(1000)`)

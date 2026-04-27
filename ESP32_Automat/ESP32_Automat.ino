@@ -159,8 +159,6 @@ TaskHandle_t AutomatTask;
 // --- Déclaration des constantes globales ---
 //-------------------------------------------------
 const char* ConfigFilename = "/config.json";
-// Compute the required size: 6 x réseaux Wi-Fi max possible
-const int JSONBufferConfigCapacity = JSON_ARRAY_SIZE(5) + 5 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(14) + 710;
 // paramètres Wi-Fi - station
 const char* Local_Name = "esp32_pool";
 // paramètres Wi-Fi - Access Point
@@ -199,10 +197,7 @@ const int pDummy11 = 27;  // spare
 const int pRelay2 = 12;   // the number of the Relay2 pin
 const int pRelay1 = 14;   // the number of the Relay1 pin
 //const int pIntTempR =     A3; // the number of the IntTempR pin
-// set PWM channels parameters
-const int cTempLEDblue = 0;
-const int cTempLEDgreen = 1;
-const int cTempLEDred = 2;
+// set PWM parameters (ESP32 core v3: pas de numéro de canal explicite)
 const int LEDfreq = 5000;  // Hz
 const int LEDres = 8;      // bits => 256 levels
 
