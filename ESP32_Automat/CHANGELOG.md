@@ -69,6 +69,12 @@ Compatible AsyncTCP v3.4.10 · ESPAsyncWebServer v3.1.0 · ESP32 v3.3.8 · ESP82
 - `SendData.ino` : comparaisons `== HIGH` remplacées par `== RELAY_OPEN`
 - Valeurs initiales de `Relay1` / `Relay2` mises à jour en `RELAY_OPEN`
 
+### Refactoring état partagé
+
+- Nouveau struct **`SharedState_T`** regroupant `mutex`, `pool` (`PoolState_T`), `mode` (`Automat_Mode_T`) et `cmd` (`Automat_Cmd_T`) — le mutex est désormais co-localisé avec les données qu'il protège
+- Instance globale unique `SharedState` remplace les quatre déclarations séparées (`stateMutex`, `PoolState`, `Automat_Mode`, `Automat_Cmd`)
+- Quatre **aliases C++ par référence** (`PoolState_T& PoolState = SharedState.pool;` etc.) assurent une rétrocompatibilité totale — aucun autre fichier modifié
+
 ### Gestion mémoire et initialisation
 
 - `Configuration_T.WiFiNetworks` : initialisé à `nullptr` dans la définition du struct — protège contre les accès avant que `ReadConfig()` ait été appelé

@@ -154,7 +154,6 @@
 // --- TASKS HANDLER DECLARATIONS (DUAL-CORE)  ---
 //------------------------------------------------
 TaskHandle_t AutomatTask;
-SemaphoreHandle_t stateMutex = NULL;
 
 //-------------------------------------------------
 // --- Déclaration des constantes globales ---
@@ -268,6 +267,13 @@ struct PoolState_T {
   boolean ErrorTempAir = false;          // température air mesurée invalide
   boolean ErrorTempWater = false;        // température air mesurée invalide
 };
+// Regroupe l'état partagé inter-cores et le mutex qui le protège
+struct SharedState_T {
+  SemaphoreHandle_t mutex = NULL;
+  PoolState_T       pool;
+  Automat_Mode_T    mode;
+  Automat_Cmd_T     cmd;
+};
 
 //-------------------------------------------------
 // --- Déclaration des variables globales ---
@@ -336,17 +342,13 @@ String DateNTP = "";
 //int AirTempDeviceID()      = 0; // #define AirTempDeviceID()      2 // swap with device 0 if temperature does not correspond
 //int InternalTempDeviceID() = 1; // #define InternalTempDeviceID() 0 // swap with device 0 if temperature does not correspond
 
-// Automat 1 : Mode de fonctionnement MANUAL || AUTOMATIC
-// ---------
-Automat_Mode_T Automat_Mode;
-
-// Automat 2 : Commande Volet roulant CLOSE_CMD_ACTIVATED || OPEN_CMD_ACTIVATED || UNDEF_CMD
-// ---------
-Automat_Cmd_T Automat_Cmd;
-
-// Etat de l'automate et de la piscine
-// -----------------------------------
-PoolState_T PoolState;
+// État partagé entre les deux cores FreeRTOS (mutex co-localisé avec les données qu'il protège)
+SharedState_T SharedState;
+// Aliases rétrocompatibles — aucun autre fichier à modifier
+PoolState_T&       PoolState    = SharedState.pool;
+Automat_Mode_T&    Automat_Mode = SharedState.mode;
+Automat_Cmd_T&     Automat_Cmd  = SharedState.cmd;
+SemaphoreHandle_t& stateMutex   = SharedState.mutex;
 
 // Variables
 // ---------
