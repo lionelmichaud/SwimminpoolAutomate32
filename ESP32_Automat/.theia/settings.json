@@ -1,0 +1,10 @@
+{
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/build/**": true,
+    "**/.cache/**": true,
+    "**/*.bin": true,
+    "**/*.elf": true,
+    "**/*.map": true
+  }
+}

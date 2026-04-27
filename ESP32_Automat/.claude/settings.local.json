@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)",
+      "Bash(perl -i -pe 's/\\\\bbyte\\\\b/uint8_t/g' \"/Users/lionelmichaud/Desktop/Arduino/Arduino App Libraries/libraries/SerialDebug/src/SerialDebug.cpp\")",
+      "Bash(perl -i -pe 's/\\\\bbyte\\\\b/uint8_t/g' \"/Users/lionelmichaud/Desktop/Arduino/Arduino App Libraries/libraries/SerialDebug/src/SerialDebug.h\")",
+      "Bash(git push *)",
+      "Bash(git remote *)",
+      "Bash(ssh-add -l)",
+      "Bash(ssh-add ~/.ssh/id_ed25519)",
+      "Bash(git -C \"/Volumes/homes/Lionel/Development/Arduino Projects/SwimminpoolAutomate32/ESP32_Automat\" push origin develop)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(pbcopy)",
+      "Bash(ssh-keygen -t ed25519 -C \"lio.michaud@gmail.com\" -f ~/.ssh/id_ed25519_github -N \"\")",
+      "Bash(ssh-add ~/.ssh/id_ed25519_github)",
+      "Bash(ssh-keygen -t ed25519 -C \"lionelmichaud@github\" -f ~/.ssh/id_ed25519_lionelmichaud -N \"\")",
+      "Bash(ssh-add ~/.ssh/id_ed25519_lionelmichaud)",
+      "Bash(ssh -T git@github-lionelmichaud)"
+    ]
+  }
+}

@@ -6,7 +6,7 @@ Toutes les modifications notables sont documentées dans ce fichier.
 
 ## [2.4.0] — 2026-04-27 (en cours)
 
-Compatible AsyncTCP v1.0.0 · ESP32 v1.0.0 · ESP8266 v2.3.0
+Compatible AsyncTCP v3.4.10 ·ESPAsyncWebServer v3.1.0 · ESP32 v3.3.8 · ESP8266 v3.1.2
 
 ### Fiabilisation des mesures de température Dallas (1-Wire)
 
